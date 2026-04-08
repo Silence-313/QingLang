@@ -12,8 +12,19 @@
     <link rel="stylesheet" th:href="@{/css/main.css}">
 </head>
 <body>
+<!-- 顶部标题栏：保持纯粹 -->
 <div id="header">
     <h1><em>青朗法治</em> · 涉外案件区域分布</h1>
+</div>
+
+<!-- 新增：中间搜索层 -->
+<div class="nav-section">
+    <div class="search-container">
+        <input type="text" id="caseSearchInput" placeholder="输入案件编号、当事人或法院关键词..." autocomplete="off" />
+        <button type="button" onclick="performNavigationSearch()">搜索</button>
+        <!-- 搜索建议下拉列表 -->
+        <div id="searchSuggestions" class="search-suggestions"></div>
+    </div>
 </div>
 
 <div class="page-wrapper">
@@ -28,22 +39,31 @@
                 <div class="row"><span class="lbl">涉外风险</span><span class="val" id="pLevel">—</span></div>
                 <div class="row"><span class="lbl">占全国比</span><span class="val" id="pRatio">—</span></div>
             </div>
-            <!-- 图例 -->
-            <div class="legend">
-                <div class="leg-title">案件密度</div>
-                <div class="leg-bar"></div>
-                <div class="leg-lbl"><span>低</span><span>中</span><span>高</span><span>极高</span></div>
-            </div>
         </div>
     </div>
 
     <!-- 下部区域：业务明细数据区 -->
     <div class="bottom-section">
-        <div class="content-box">
-            <h2 class="section-title">业务明细数据</h2>
-            <div id="new-data-area">
-                <!-- 动态内容预留 -->
-                <div class="placeholder-text">📊 实时统计看板 · 案件趋势与分布详情</div>
+        <div class="case-columns-container">
+            <!-- 刑事列 -->
+            <div class="case-column">
+                <div class="column-header">刑事案件</div>
+                <div id="list-刑事" class="case-list"></div>
+            </div>
+            <!-- 民事列 -->
+            <div class="case-column">
+                <div class="column-header">民事案件</div>
+                <div id="list-民事" class="case-list"></div>
+            </div>
+            <!-- 行政列 -->
+            <div class="case-column">
+                <div class="column-header">行政案件</div>
+                <div id="list-行政" class="case-list"></div>
+            </div>
+            <!-- 公益诉讼列 -->
+            <div class="case-column">
+                <div class="column-header">公益诉讼</div>
+                <div id="list-公益诉讼" class="case-list"></div>
             </div>
         </div>
     </div>

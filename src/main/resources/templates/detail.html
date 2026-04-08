@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>青朗法治 - 案件业务详情</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/detail.css}">
+</head>
+<body>
+<div id="header">
+  <h1 style="cursor:pointer;" onclick="location.href='/'"><em>青朗法治</em> · 案件全生命周期详情</h1>
+</div>
+
+<div class="detail-wrapper">
+  <!-- 左侧主内容区 -->
+  <div class="main-content">
+    <div class="card">
+      <div class="card-header">
+        <span>基本案情</span>
+        <span id="caseTypeTag" class="tag-status">加载中...</span>
+      </div>
+      <div class="data-grid">
+        <div><div class="item-lbl">案件编号</div><div class="item-val" id="caseNum">-</div></div>
+        <div><div class="item-lbl">案件名称</div><div class="item-val" id="caseName">-</div></div>
+        <div><div class="item-lbl">受理法院</div><div class="item-val" id="courtName">-</div></div>
+        <div><div class="item-lbl">受理日期</div><div class="item-val" id="acceptDate">-</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">当事人信息</div>
+      <div id="partiesContainer"></div>
+    </div>
+  </div>
+
+  <!-- 右侧辅助信息 -->
+  <div class="side-content">
+    <div class="card highlight-card">
+      <div class="card-header" style="color: #ffd166;">法律监督评价</div>
+      <div id="supervisionBox">
+        <p class="item-lbl">正在深度解析线索...</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">卷宗数字化情况</div>
+      <div class="data-grid single-col">
+        <div><div class="item-lbl">总页数</div><div class="item-val" id="totalPages">0 页</div></div>
+        <div><div class="item-lbl">文书类型</div><div class="item-val" id="docTypes">-</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/detail.js}"></script>
+</body>
+</html>

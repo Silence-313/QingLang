@@ -3,6 +3,7 @@ package org.example.qinglang.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "cases")
@@ -19,10 +20,14 @@ public class CaseEntity {
     @Column(nullable = false, length = 255)
     private String caseName;   // 案件名称
 
-    private String courtName;  // 审理法院/检察院
-    private String caseType;   // 案件类型
-    private LocalDate acceptanceDate; // 受理日期
-    private LocalDate closingDate;    // 结案日期
-    private Integer totalPages;       // 卷宗总页数
-    private String documentTypes;     // 文书类型
+    private String courtName;
+    private String caseType;
+    private LocalDate acceptanceDate;
+    private LocalDate closingDate;
+    private Integer totalPages;
+    private String documentTypes;
+
+    // 新增：建立与 PartyEntity 的一对多关联[cite: 18]
+    @OneToMany(mappedBy = "caseEntity", fetch = FetchType.LAZY)
+    private List<PartyEntity> parties;
 }

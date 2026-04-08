@@ -18,4 +18,10 @@ public class IndexController {
     public String mainPage() {
         return "main"; // 对应 templates/main.html
     }
+
+    // 访问 localhost:8080/search-results 展示结果页面
+    @GetMapping("/search-results")
+    public String searchResultsPage() {
+        return "search"; // 对应 templates/search.html
+    }
 }

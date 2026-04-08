@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果 - 青朗法治</title>
+    <!-- 复用全局样式 + 搜索页专属样式 -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/search.css}">
+</head>
+<body>
+<!-- 保持 header 不变 -->
+<div id="header">
+    <h1 onclick="location.href='/main'" style="cursor:pointer">← 返回指挥中心</h1>
+    <div class="search-info-box">
+        <span class="search-label">搜索关键词：</span>
+        <div class="search-input-wrapper">
+            <input type="text" id="keywordInput" placeholder="输入新关键词..." />
+            <button id="reSearchBtn">🔍</button>
+        </div>
+    </div>
+</div>
+
+<div class="main-layout">
+    <!-- 左侧：统计信息面板 -->
+    <div class="sidebar">
+        <div class="stats-card">
+            <h3>📊 关键词画像</h3>
+            <div id="geoDistribution" class="chart-box">地区分布加载中...</div>
+            <div id="yearTrend" class="chart-box">年份趋势加载中...</div>
+            <div id="resultAnalysis" class="chart-box">裁判成果对比...</div>
+        </div>
+    </div>
+
+    <!-- 右侧：搜索结果面板（应用相同 UI） -->
+    <div class="results-area">
+        <div class="stats-card"> <!-- 复用 stats-card 样式 -->
+            <h3>📂 详细案件检索</h3>
+            <div id="resultsGrid" class="results-list-container">
+                <!-- 这里渲染案件条目 -->
+                <div class="loading-state">🔍 正在检索详细案件...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/search.js}"></script>
+</body>
+</html>

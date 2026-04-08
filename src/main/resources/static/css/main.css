@@ -19,7 +19,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid rgba(80, 160, 255, 0.2);
+    /*border-bottom: 1px solid rgba(80, 160, 255, 0.2);*/
     background: rgba(6, 14, 31, 0.95);
     position: relative;
     z-index: 10;
@@ -191,4 +191,220 @@ body {
 .bottom-section::-webkit-scrollbar-thumb {
     background: #2c5a8c;
     border-radius: 3px;
+}
+
+.case-columns-container {
+    display: flex;
+    gap: 15px;
+    height: 100%;
+    padding: 10px;
+}
+
+.case-column {
+    flex: 1;
+    background: rgba(10, 30, 60, 0.4);
+    border: 1px solid rgba(80, 160, 255, 0.2);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-header {
+    padding: 10px;
+    background: rgba(80, 160, 255, 0.15);
+    color: #5ab4ff;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid rgba(80, 160, 255, 0.2);
+}
+
+.case-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* 滚动条美化 */
+.case-list::-webkit-scrollbar { width: 4px; }
+.case-list::-webkit-scrollbar-thumb { background: rgba(80, 160, 255, 0.3); }
+
+.case-item {
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 8px;
+    padding: 10px;
+    border-left: 3px solid #5ab4ff;
+    font-size: 13px;
+}
+
+.case-item .case-title { color: #c8e0ff; margin-bottom: 5px; font-weight: bold; }
+.case-item .case-info { color: #6a8caa; font-size: 12px; }
+
+.search-container {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+#caseSearchInput {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #00f2fe;
+    border-radius: 4px;
+    padding: 8px 15px;
+    color: #fff;
+    width: 260px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+#caseSearchInput:focus {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+}
+
+.search-container button {
+    background: #00f2fe;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    color: #000;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.search-container button:hover {
+    background: #4facfe;
+}
+
+/*.search-container {*/
+/*    position: relative; !* 确保下拉框相对于容器定位 *!*/
+/*}*/
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: calc(100% - 70px); /* 与输入框宽度保持一致 */
+    background: rgba(5, 15, 40, 0.95);
+    border: 1px solid #00f2fe;
+    border-top: none;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none; /* 初始隐藏 */
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(80, 160, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+    background: rgba(80, 160, 255, 0.2);
+}
+
+.suggestion-item .item-title {
+    color: #ffd166; /* 突出案件标题/编号 */
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.suggestion-item .item-desc {
+    color: #a0c4e8;
+    font-size: 11px;
+}
+
+/* 1. 调整整体高度分配 */
+#header {
+    height: 60px; /* 保持原样 */
+}
+
+/* 修改：增加高度，并调整内边距 */
+.nav-section {
+    height: 40px; /* 从 50px 增加到 60px，给上下留出更多呼吸空间 */
+    display: flex;
+    align-items: center; /* 确保搜索框在 60px 高度内垂直居中 */
+    justify-content: flex-end;
+    padding: 0 20px;
+    background: rgba(6, 14, 31, 0.8);
+    border-bottom: 1px solid rgba(80, 160, 255, 0.15);
+    position: relative;
+    z-index: 20;
+}
+
+/* 3. 搜索容器宽度优化 */
+.search-container {
+    position: relative;
+    width: 400px; /* 固定一个合适的宽度 */
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+#caseSearchInput {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 242, 254, 0.4);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #fff;
+    outline: none;
+}
+
+.search-suggestions {
+    width: 100%; /* 下拉框与容器同宽 */
+    top: 100%;
+    margin-top: 5px;
+    /* 其他属性沿用之前的定义 */
+}
+
+/* 修改：减去 header(60px) 和 nav-section(60px) */
+.page-wrapper {
+    height: calc(100vh - 120px); /* 110px 改为 120px */
+    width: 100%;
+    background: #060e1f;
+    overflow: hidden;
+}
+
+/* 命中项列表基础样式[cite: 10] */
+.search-suggestions {
+    position: absolute;
+    background: rgba(5, 15, 40, 0.95);
+    border: 1px solid #00f2fe;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* 单个命中项样式 */
+.suggestion-item {
+    padding: 10px;
+    border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+/* 悬停时的科技感高亮 */
+.suggestion-item:hover {
+    background: rgba(0, 242, 254, 0.2);
+    border-left: 3px solid #ffd166; /* 增加左侧边框提示 */
+}
+
+.item-title {
+    color: #fff;
+    font-weight: bold;
+}
+
+.item-desc {
+    color: #8ab3d7;
+    font-size: 12px;
 }

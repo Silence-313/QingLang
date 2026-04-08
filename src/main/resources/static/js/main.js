@@ -13,6 +13,82 @@
     let dataMap = {};
     let totalCases = 0;
     let maxValue = 1;
+    const searchInput = document.getElementById('caseSearchInput');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    let debounceTimer;
+
+    // 监听输入事件
+    searchInput.addEventListener('input', (e) => {
+        const keyword = e.target.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (!keyword) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        // 防抖：300ms 后再发送请求
+        debounceTimer = setTimeout(() => {
+            fetchSuggestions(keyword);
+        }, 300);
+    });
+
+    async function fetchSuggestions(keyword) {
+        try {
+            // 注意：这里复用你的搜索接口，或者专门写一个轻量级的提示接口
+            const response = await fetch(`/api/cases/search?keyword=${encodeURIComponent(keyword)}`);
+            const cases = await response.json();
+
+            if (cases && cases.length > 0) {
+                renderSuggestions(cases.slice(0, 8)); // 最多显示8条
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        } catch (err) {
+            console.error("提示词加载失败", err);
+        }
+    }
+
+    // main.js[cite: 11]
+    function renderSuggestions(list) {
+        const suggestionsBox = document.getElementById('searchSuggestions');
+
+        // 将命中数据映射为 HTML
+        suggestionsBox.innerHTML = list.map(item => `
+        <div class="suggestion-item" data-id="${item.caseId}">
+            <div class="item-title">${escapeHtml(item.caseNumber)}</div>
+            <div class="item-desc">
+                ${escapeHtml(item.courtName)} | ${item.caseName}
+            </div>
+        </div>
+    `).join('');
+
+        suggestionsBox.style.display = 'block';
+
+        // 绑定点击事件，实现跳转
+        document.querySelectorAll('.suggestion-item').forEach(el => {
+            el.addEventListener('click', function() {
+                const caseId = this.dataset.id;
+                // 跳转至详情页路由，并将 ID 作为 URL 参数传递
+                window.location.href = `/case/detail?id=${caseId}`;
+            });
+        });
+    }
+
+    // 点击页面其他地方隐藏下拉框
+    document.addEventListener('click', (e) => {
+        if (e.target !== searchInput) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+
+    // 防止 XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        })[m]);
+    }
 
     // 获取 echarts 实例
     const chartDom = document.getElementById('map');
@@ -266,4 +342,92 @@
     } else {
         initDashboard();
     }
+
+    async function loadCaseDetails() {
+        try {
+            const response = await fetch('/api/cases/grouped');
+            const groupedData = await response.json();
+
+            const types = ['刑事', '民事', '行政', '公益诉讼'];
+
+            types.forEach(type => {
+                const listContainer = document.getElementById(`list-${type}`);
+                const cases = groupedData[type] || [];
+
+                listContainer.innerHTML = cases.map(c => `
+                <div class="case-item">
+                    <div class="case-title">${c.caseName}</div>
+                    <div class="case-info">
+                        编号：${c.caseNumber}<br>
+                        法院：${c.courtName}
+                    </div>
+                </div>
+            `).join('');
+
+                if (cases.length === 0) {
+                    listContainer.innerHTML = '<div style="color:#444;text-align:center;margin-top:20px;">暂无数据</div>';
+                }
+            });
+        } catch (error) {
+            console.error("加载明细失败:", error);
+        }
+    }
+
+    // 在页面初始化时调用
+    loadCaseDetails();
+
+    // 搜索处理函数
+    async function handleSearch() {
+        const keyword = document.getElementById('caseSearchInput').value.trim();
+
+        // 如果没有输入，则加载全部（或默认）
+        const url = keyword
+            ? `/api/cases/search?keyword=${encodeURIComponent(keyword)}`
+            : `/api/cases/all`;
+
+        try {
+            const response = await fetch(url);
+            const cases = await response.json();
+
+            // 调用你原有的渲染函数，更新底部四列列表
+            updateCaseLists(cases);
+        } catch (error) {
+            console.error("搜索失败:", error);
+        }
+    }
+
+    // 监听回车键
+    document.getElementById('caseSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSearch();
+    });
+
+    // 监听回车
+    document.getElementById('caseSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSearch();
+    });
+
+    // 修改 main.js 中的搜索逻辑
+    window.performNavigationSearch = function() {
+        // 兼容可能存在的不同 ID
+        const inputEl = document.getElementById('caseSearchInput') || document.getElementById('searchInput');
+        if (!inputEl) return;
+
+        const keyword = inputEl.value.trim();
+
+        // 强制跳转至搜索结果页[cite: 34]
+        // 即使 keyword 为空，search.js 也会处理并显示“未提供关键词”
+        window.location.href = `/search-results?keyword=${encodeURIComponent(keyword)}`;
+    };
+
+    // 监听回车键
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('caseSearchInput') || document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    performNavigationSearch();
+                }
+            };
+        }
+    });
 })();
