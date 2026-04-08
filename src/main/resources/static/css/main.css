@@ -1,0 +1,194 @@
+/* ===== main.css - 3D指挥中心样式，已去重并优化 ===== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #060e1f;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 顶部标题栏 */
+#header {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(80, 160, 255, 0.2);
+    background: rgba(6, 14, 31, 0.95);
+    position: relative;
+    z-index: 10;
+}
+
+#header h1 {
+    color: #c8e0ff;
+    margin: 0;
+    font-size: 21px;
+    font-weight: 400;
+    letter-spacing: 6px;
+}
+
+#header h1 em {
+    color: #5ab4ff;
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* 上下结构布局 */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    width: 100%;
+    background: #060e1f;
+}
+
+.top-section {
+    flex: 6;
+    position: relative;
+    border-bottom: 1px solid rgba(80, 160, 255, 0.2);
+    min-height: 400px;
+}
+
+#map-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* 底部内容区 */
+.bottom-section {
+    flex: 4;
+    padding: 15px;
+    background: rgba(5, 15, 40, 0.5);
+    overflow-y: auto;
+}
+
+.content-box {
+    border: 1px solid rgba(60, 140, 255, 0.2);
+    background: rgba(10, 25, 55, 0.4);
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title {
+    font-size: 16px;
+    color: #5ab4ff;
+    padding: 10px 15px;
+    margin: 0;
+    border-bottom: 1px solid rgba(60, 140, 255, 0.1);
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+#new-data-area {
+    flex: 1;
+    padding: 20px;
+    color: #a0c4e8;
+    font-size: 14px;
+}
+
+.placeholder-text {
+    text-align: center;
+    padding: 30px;
+    background: rgba(30, 60, 100, 0.2);
+    border-radius: 8px;
+    color: #8ab3d7;
+    font-style: italic;
+}
+
+/* 悬浮信息面板 (去重，仅保留一个定义) */
+.info-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 210px;
+    background: rgba(5, 15, 40, 0.9);
+    border: 1px solid rgba(60, 140, 255, 0.3);
+    border-radius: 6px;
+    padding: 16px 18px;
+    pointer-events: none;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+}
+
+.panel-name {
+    font-size: 15px;
+    color: #5ab4ff;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(60, 140, 255, 0.2);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin: 8px 0;
+}
+
+.lbl {
+    color: #6a8caa;
+}
+
+.val {
+    color: #ffd166;
+    font-weight: 600;
+}
+
+/* 图例 */
+.legend {
+    position: absolute;
+    bottom: 28px;
+    left: 22px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.leg-title {
+    font-size: 12px;
+    color: #6a8caa;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.leg-bar {
+    width: 150px;
+    height: 7px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #c8e4ff, #5ab4ff, #1a5cbf, #082566);
+}
+
+.leg-lbl {
+    display: flex;
+    justify-content: space-between;
+    width: 150px;
+    font-size: 11px;
+    color: #6a8caa;
+    margin-top: 4px;
+}
+
+/* 滚动条美观 */
+.bottom-section::-webkit-scrollbar {
+    width: 5px;
+}
+.bottom-section::-webkit-scrollbar-track {
+    background: #0a1930;
+}
+.bottom-section::-webkit-scrollbar-thumb {
+    background: #2c5a8c;
+    border-radius: 3px;
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青朗法治 - 3D 业务指挥中心</title>
+    <!-- 第三方库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <!-- 独立样式文件 -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div id="header">
+    <h1><em>青朗法治</em> · 涉外案件区域分布</h1>
+</div>
+
+<div class="page-wrapper">
+    <!-- 上部区域：3D地图容器 -->
+    <div class="top-section">
+        <div id="map-container">
+            <div id="map"></div>
+            <!-- 悬浮信息面板 -->
+            <div class="info-panel">
+                <div class="panel-name" id="pName">全国概览</div>
+                <div class="row"><span class="lbl">案件数量</span><span class="val" id="pCases">—</span></div>
+                <div class="row"><span class="lbl">涉外风险</span><span class="val" id="pLevel">—</span></div>
+                <div class="row"><span class="lbl">占全国比</span><span class="val" id="pRatio">—</span></div>
+            </div>
+            <!-- 图例 -->
+            <div class="legend">
+                <div class="leg-title">案件密度</div>
+                <div class="leg-bar"></div>
+                <div class="leg-lbl"><span>低</span><span>中</span><span>高</span><span>极高</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下部区域：业务明细数据区 -->
+    <div class="bottom-section">
+        <div class="content-box">
+            <h2 class="section-title">业务明细数据</h2>
+            <div id="new-data-area">
+                <!-- 动态内容预留 -->
+                <div class="placeholder-text">📊 实时统计看板 · 案件趋势与分布详情</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 独立脚本文件 -->
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>
