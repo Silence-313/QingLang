@@ -53,25 +53,37 @@
     function renderSuggestions(list) {
         const suggestionsBox = document.getElementById('searchSuggestions');
 
-        // 将命中数据映射为 HTML
+        // 确保清空之前的搜索建议
+        suggestionsBox.innerHTML = '';
+
+        if (!list || list.length === 0) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        // 使用你控制台打印出来的实际字段名: item.caseId, item.title, item.content
         suggestionsBox.innerHTML = list.map(item => `
-        <div class="suggestion-item" data-id="${item.caseId}">
-            <div class="item-title">${escapeHtml(item.caseNumber)}</div>
-            <div class="item-desc">
-                ${escapeHtml(item.courtName)} | ${item.caseName}
+            <div class="suggestion-item" data-id="${item.caseId}" style="padding: 10px; border-bottom: 1px solid #444; cursor: pointer;">
+                <div class="item-title" style="font-weight: bold; color: #fff; font-size: 14px;">
+                    ${escapeHtml(item.title)}
+                </div>
+                <div class="item-desc" style="font-size: 12px; color: #aaa; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHtml(item.content)}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 
         suggestionsBox.style.display = 'block';
 
-        // 绑定点击事件，实现跳转
-        document.querySelectorAll('.suggestion-item').forEach(el => {
-            el.addEventListener('click', function() {
-                const caseId = this.dataset.id;
-                // 跳转至详情页路由，并将 ID 作为 URL 参数传递
-                window.location.href = `/case/detail?id=${caseId}`;
-            });
+        const currentInputKwd = searchInput.value.trim(); // 获取当前搜索框文字
+
+        const items = suggestionsBox.querySelectorAll('.suggestion-item');
+        items.forEach(el => {
+            el.onclick = function() {
+                const id = this.getAttribute('data-id');
+                // 修改这里：增加 fromKwd 参数
+                window.location.href = `/case/detail?id=${id}&fromKwd=${encodeURIComponent(currentInputKwd)}`;
+            };
         });
     }
 
@@ -363,15 +375,14 @@
                 const cases = groupedData[type] || [];
 
                 if (cases.length > 0) {
+                    // 假设这些列表项点击也要跳转，并且你想让它返回到搜索页（虽然它是从首页点的）
+                    // 如果你想让它返回到搜索结果，你可以给它一个固定的 fromKwd，或者干脆保持现状返回首页
                     listContainer.innerHTML = cases.map(c => `
-                    <div class="case-item">
-                        <div class="case-title">${escapeHtml(c.caseName)}</div>
-                        <div class="case-info">
-                            编号：${escapeHtml(c.caseNumber)}<br>
-                            法院：${escapeHtml(c.courtName)}
+                        <div class="case-item" onclick="window.location.href='/case/detail?id=${c.caseId}&fromKwd=${encodeURIComponent(c.caseName)}'">
+                            <div class="case-title">${escapeHtml(c.caseName)}</div>
+                            <!-- ... -->
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
                 } else {
                     listContainer.innerHTML = '<div class="no-data">暂无数据</div>';
                 }

@@ -1,6 +1,7 @@
 package org.example.qinglang.service;
 
 import org.example.qinglang.entity.CaseEntity;
+import org.example.qinglang.repository.CaseDetailRepository;
 import org.example.qinglang.repository.CaseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,9 @@ public class CaseService {
 
     @Autowired
     private CaseRepository caseRepository;
+
+    @Autowired
+    private CaseDetailRepository caseDetailRepository;
 
     public List<CaseEntity> getAllCases() {
         return caseRepository.findAll();
@@ -35,7 +39,18 @@ public class CaseService {
     }
 
     public CaseEntity getCaseById(Integer id) {
-        return caseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("案件未找到，ID: " + id));
+        // 1. 先查基础表 (cases)
+        CaseEntity caseEntity = caseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("案件基础信息未找到"));
+
+        // 2. 再查详情表 (case_details)
+        caseDetailRepository.findByCaseId(id).ifPresent(detail -> {
+            // 将详情表的 case_reason 赋值给实体类的 causeOfAction 字段
+            caseEntity.setCauseOfAction(detail.getCaseReason());
+        });
+
+        return caseEntity;
     }
+
+
 }

@@ -8,8 +8,15 @@
   <link rel="stylesheet" th:href="@{/css/detail.css}">
 </head>
 <body>
+<!-- 修改 detail.html 的 header 部分 -->
 <div id="header">
-  <h1 style="cursor:pointer;" onclick="location.href='/'"><em>青朗法治</em> · 案件全生命周期详情</h1>
+  <div class="back-btn-container" style="position: absolute; left: 20px;">
+    <!-- 删掉了 onclick，只保留 ID -->
+    <button id="backBtn" class="back-btn">← 返回</button>
+  </div>
+  <h1 style="cursor:pointer; flex: 1; text-align: center;" onclick="location.href='/'">
+    <em>青朗法治</em> · 案件全生命周期详情
+  </h1>
 </div>
 
 <div class="detail-wrapper">
@@ -18,7 +25,10 @@
     <div class="card">
       <div class="card-header">
         <span>基本案情</span>
-        <span id="caseTypeTag" class="tag-status">加载中...</span>
+        <div class="tag-group"> <!-- 建议用个容器包裹 -->
+          <span id="caseTypeTag" class="tag-status">加载中...</span>
+          <span id="causeTag" class="tag-status" style="background: #28a745; margin-left: 8px;">案由加载中...</span>
+        </div>
       </div>
       <div class="data-grid">
         <div><div class="item-lbl">案件编号</div><div class="item-val" id="caseNum">-</div></div>

@@ -23,7 +23,7 @@ public class CaseDetailController {
         // 将 ID 传给前端，前端可以通过这个 ID 再去请求 REST 接口获取数据
         // 或者直接在这里查出数据放入 Model
         model.addAttribute("caseId", id);
-        return "case-detail";
+        return "detail";
     }
 
     /**

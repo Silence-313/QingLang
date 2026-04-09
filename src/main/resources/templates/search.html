@@ -11,7 +11,14 @@
 <body>
 <!-- 保持 header 不变 -->
 <div id="header">
-    <h1 onclick="location.href='/main'" style="cursor:pointer">← 返回指挥中心</h1>
+    <!-- 1. 新增：详情页同款返回按钮容器 -->
+    <div class="back-btn-container">
+        <button id="backToMainBtn" class="back-btn">← 返回指挥中心</button>
+    </div>
+
+    <!-- 2. 修改：标题不再承担返回功能，改为纯显示 -->
+    <h1 style="flex: 1; text-align: center;">青朗法治 · 搜索分析</h1>
+
     <div class="search-info-box">
         <span class="search-label">搜索关键词：</span>
         <div class="search-input-wrapper">
@@ -24,6 +31,24 @@
 <div class="main-layout">
     <!-- 左侧：统计信息面板 -->
     <div class="sidebar">
+        <!-- 在 search.html 的 sidebar 内添加 -->
+        <div class="stats-card" style="margin-bottom: 20px;">
+            <h3>🎯 多维高级筛选</h3>
+            <div class="filter-group">
+                <label>案件类型</label>
+                <select id="filterType" class="filter-select">
+                    <option value="">匹配类型中...</option>
+                </select>
+            </div>
+            <div class="filter-group" style="margin-top: 15px;">
+                <label>核心案由</label>
+                <select id="filterReason" class="filter-select">
+                    <option value="">正在匹配案由...</option>
+                </select>
+            </div>
+            <button id="applyFilterBtn" class="apply-btn">执行筛选</button>
+        </div>
+
         <div class="stats-card">
             <h3>📊 关键词画像</h3>
             <div id="geoDistribution" class="chart-box">地区分布加载中...</div>
@@ -41,6 +66,7 @@
                 <div class="loading-state">🔍 正在检索详细案件...</div>
             </div>
         </div>
+
     </div>
 </div>
 

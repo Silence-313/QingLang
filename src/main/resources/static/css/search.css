@@ -132,16 +132,25 @@
     padding: 15px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    min-height: 100%; /* 撑满左侧高度 */
+    gap: 12px; /* 缩小内部组件间距 */
+    min-height: auto; /* 关键：取消 100% 强制拉伸，改为自动高度 */
+    height: fit-content; /* 关键：高度适应内容 */
 }
 
+/* 针对标题缩小底部边距 */
 .stats-card h3 {
-    color: #5ab4ff; /* 复用 section-title 颜色[cite: 30] */
-    font-size: 16px;
-    margin-bottom: 20px;
+    color: #5ab4ff;
+    font-size: 15px; /* 略微调小字体 */
+    margin-bottom: 10px; /* 减少标题下方的空隙 */
     border-bottom: 1px solid rgba(60, 140, 255, 0.1);
-    padding-bottom: 10px;
+    padding-bottom: 8px;
+}
+
+/* 缩小执行按钮的顶部间距 */
+.apply-btn {
+    margin-top: 10px; /* 从 20px 调小到 10px */
+    width: 100%;
+    /* 保持原有其他样式不变... */
 }
 
 
@@ -233,4 +242,99 @@
 
 #reSearchBtn:hover {
     transform: scale(1.2);
+}
+
+/* search.css */
+
+/* 1. 修复 Header 布局，确保按钮能绝对定位在左侧 */
+#header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important; /* 必须是 relative */
+    height: 60px;
+    padding: 0 20px;
+}
+
+/* 2. 定位容器 */
+.back-btn-container {
+    position: absolute !important;
+    left: 20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 100;
+}
+
+/* 3. 详情页同款科技感按钮样式 */
+.back-btn {
+    background: rgba(90, 180, 255, 0.2) !important;
+    border: 1px solid #5ab4ff !important;
+    color: #5ab4ff !important;
+    padding: 8px 18px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    outline: none;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.back-btn:hover {
+    background: #5ab4ff !important;
+    color: #fff !important;
+    box-shadow: 0 0 15px rgba(90, 180, 255, 0.6) !important;
+}
+
+/* search.css 新增 */
+.filter-group label {
+    display: block;
+    color: #6a8caa;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.filter-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(80, 160, 255, 0.3);
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-select option {
+    background: #060e1f; /* 匹配背景色 */
+    color: #fff;
+}
+
+.apply-btn {
+    margin-top: 20px;
+    width: 100%;
+    background: linear-gradient(90deg, #2c5a8c, #5ab4ff);
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.apply-btn:hover {
+    box-shadow: 0 0 15px rgba(90, 180, 255, 0.5);
+    filter: brightness(1.2);
+}
+
+/* search.css 增强 */
+.filter-select {
+    transition: border-color 0.4s ease, box-shadow 0.4s ease; /* 增加平滑过渡 */
+}
+
+.filter-select:focus {
+    border-color: #00f2fe;
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
 }

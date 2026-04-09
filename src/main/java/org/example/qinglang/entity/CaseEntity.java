@@ -21,11 +21,15 @@ public class CaseEntity {
     private String caseName;   // 案件名称
 
     private String courtName;
+    @Column(name = "case_type")
     private String caseType;
     private LocalDate acceptanceDate;
     private LocalDate closingDate;
     private Integer totalPages;
     private String documentTypes;
+
+    @Transient // 告诉 JPA 这不是 cases 表的列
+    private String causeOfAction;
 
     // 新增：建立与 PartyEntity 的一对多关联[cite: 18]
     @OneToMany(mappedBy = "caseEntity", fetch = FetchType.LAZY)
