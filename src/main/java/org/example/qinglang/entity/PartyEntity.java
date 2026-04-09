@@ -1,5 +1,6 @@
 package org.example.qinglang.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,6 +16,7 @@ public class PartyEntity {
     // 关键：建立与 CaseEntity 的多对一关联
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id")
+    @JsonIgnore  // 阻止从 Party 反向序列化 Case
     private CaseEntity caseEntity;
 
     private String partyName;

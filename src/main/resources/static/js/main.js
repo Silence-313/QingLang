@@ -348,24 +348,32 @@
             const response = await fetch('/api/cases/grouped');
             const groupedData = await response.json();
 
+            // 关键调试：看控制台里 keys 是否真的是 ['刑事', '民事', '行政', '公益诉讼']
+            console.log("Grouped Keys:", Object.keys(groupedData));
+
             const types = ['刑事', '民事', '行政', '公益诉讼'];
 
             types.forEach(type => {
                 const listContainer = document.getElementById(`list-${type}`);
+                if (!listContainer) {
+                    console.error(`找不到容器: list-${type}`);
+                    return;
+                }
+
                 const cases = groupedData[type] || [];
 
-                listContainer.innerHTML = cases.map(c => `
-                <div class="case-item">
-                    <div class="case-title">${c.caseName}</div>
-                    <div class="case-info">
-                        编号：${c.caseNumber}<br>
-                        法院：${c.courtName}
+                if (cases.length > 0) {
+                    listContainer.innerHTML = cases.map(c => `
+                    <div class="case-item">
+                        <div class="case-title">${escapeHtml(c.caseName)}</div>
+                        <div class="case-info">
+                            编号：${escapeHtml(c.caseNumber)}<br>
+                            法院：${escapeHtml(c.courtName)}
+                        </div>
                     </div>
-                </div>
-            `).join('');
-
-                if (cases.length === 0) {
-                    listContainer.innerHTML = '<div style="color:#444;text-align:center;margin-top:20px;">暂无数据</div>';
+                `).join('');
+                } else {
+                    listContainer.innerHTML = '<div class="no-data">暂无数据</div>';
                 }
             });
         } catch (error) {

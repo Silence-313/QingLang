@@ -24,7 +24,9 @@ public class CaseService {
 
     public Map<String, List<CaseEntity>> getCasesGroupByType() {
         List<CaseEntity> allCases = caseRepository.findAll();
-        return allCases.stream().collect(Collectors.groupingBy(CaseEntity::getCaseType));
+        return allCases.stream()
+                .filter(c -> c.getCaseType() != null)
+                .collect(Collectors.groupingBy(c -> c.getCaseType().trim())); // 增加 trim()
     }
 
     public List<CaseEntity> searchByKeyword(String keyword) {
