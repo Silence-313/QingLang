@@ -338,3 +338,101 @@
     border-color: #00f2fe;
     box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
 }
+
+/* ===== 1. Header 样式统一 ===== */
+#header {
+    height: 60px;
+    background: rgba(6, 14, 31, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+}
+
+#header h1 {
+    color: #c8e0ff;
+    font-size: 21px;
+    letter-spacing: 6px;
+}
+
+#header h1 em {
+    color: #5ab4ff;
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* ===== 2. Nav-Section 样式仿照 ===== */
+.nav-section {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* 搜索框靠右，与 main 一致 */
+    padding: 0 20px;
+    background: rgba(6, 14, 31, 0.8);
+    border-bottom: 1px solid rgba(80, 160, 255, 0.15);
+    position: relative;
+    z-index: 20;
+}
+
+.search-container {
+    position: relative;
+    width: 400px;
+    display: flex;
+    gap: 8px;
+}
+
+#keywordInput {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 242, 254, 0.4);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #fff;
+    outline: none;
+    transition: all 0.3s;
+}
+
+#keywordInput:focus {
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#reSearchBtn {
+    background: #00f2fe;
+    border: none;
+    padding: 6px 20px;
+    border-radius: 4px;
+    color: #000;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#reSearchBtn:hover {
+    background: #4facfe;
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+}
+
+/* ===== 3. 布局高度修正 ===== */
+.main-layout {
+    /* 减去 header(60px) 和 nav-section(40px) 的高度 */
+    height: calc(100vh - 100px);
+    background: #060e1f;
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+/* 结果卡片微调：更像 main 的 case-item */
+.case-card {
+    border-left: 3px solid #5ab4ff;
+    background: rgba(255, 255, 255, 0.03);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.case-card:hover {
+    background: rgba(80, 160, 255, 0.1);
+    transform: translateX(5px);
+}

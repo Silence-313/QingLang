@@ -25,8 +25,10 @@ public interface CaseRepository extends JpaRepository<CaseEntity, Integer> {
     @Query("SELECT c FROM CaseEntity c LEFT JOIN FETCH c.parties WHERE c.caseId = :id")
     Optional<CaseEntity> findByIdWithParties(@Param("id") Integer id);
 
-    @Query("SELECT c FROM CaseEntity c JOIN CaseDetailEntity d ON c.caseId = d.caseId WHERE " +
-            "(c.caseName LIKE %:keyword% OR c.caseNumber LIKE %:keyword%) " +
+    @Query("SELECT DISTINCT c FROM CaseEntity c " +
+            "LEFT JOIN FETCH c.parties " +
+            "JOIN CaseDetailEntity d ON c.caseId = d.caseId " +
+            "WHERE (c.caseName LIKE %:keyword% OR c.caseNumber LIKE %:keyword%) " +
             "AND (:type IS NULL OR :type = '' OR c.caseType = :type) " +
             "AND (:reason IS NULL OR :reason = '' OR d.caseReason = :reason)")
     List<CaseEntity> findByAdvancedCriteria(
@@ -35,5 +37,7 @@ public interface CaseRepository extends JpaRepository<CaseEntity, Integer> {
             @Param("reason") String reason
     );
 
+    @Query("SELECT DISTINCT c.caseType FROM CaseEntity c WHERE c.caseType IS NOT NULL AND c.caseType != ''")
+    List<String> findAllDistinctCaseTypes();
 
 }

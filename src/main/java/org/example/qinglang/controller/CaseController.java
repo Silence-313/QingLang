@@ -2,6 +2,8 @@ package org.example.qinglang.controller;
 
 import org.example.qinglang.entity.CaseEntity;
 import org.example.qinglang.entity.CaseEsEntity; // 导入 ES 实体
+import org.example.qinglang.repository.CaseDetailRepository;
+import org.example.qinglang.repository.CaseRepository;
 import org.example.qinglang.service.CaseService;
 import org.example.qinglang.repository.CaseEsRepository; // 注入 ES 仓库
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,12 @@ public class CaseController {
 
     @Autowired
     private CaseEsRepository caseEsRepository; // 注入 ES Repository
+
+    @Autowired
+    private CaseDetailRepository caseDetailRepository;
+
+    @Autowired
+    private CaseRepository caseRepository;
 
     @GetMapping
     public List<CaseEntity> list() {
@@ -40,8 +48,21 @@ public class CaseController {
      * 这样前端代码 main.js 不需要改动地址，依然访问 /api/cases/search
      */
     @GetMapping("/search")
-    public List<CaseEsEntity> search(@RequestParam String keyword) {
-        // 直接使用 ES 进行全文检索[cite: 11]
-        return caseEsRepository.findByTitleOrContentOrPartyNames(keyword, keyword, keyword);
+    public List<CaseEsEntity> search(
+            @RequestParam String keyword,
+            @RequestParam(required = false) String caseType,
+            @RequestParam(required = false) String caseReason) {
+        // 调用服务层的高级搜索方法，返回转换后的 CaseEsEntity 列表
+        return caseService.advancedSearch(keyword, caseType, caseReason);
+    }
+
+    @GetMapping("/types")
+    public List<String> getAllCaseTypes() {
+        return caseRepository.findAllDistinctCaseTypes();
+    }
+
+    @GetMapping("/reasons")
+    public List<String> getAllCaseReasons() {
+        return caseDetailRepository.findAllDistinctCaseReasons();
     }
 }

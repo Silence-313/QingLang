@@ -29,12 +29,14 @@
     document.head.appendChild(style);
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // --- 1. 初始化 DOM 元素 ---
     const keywordInput = document.getElementById('keywordInput');
     const reSearchBtn = document.getElementById('reSearchBtn');
     const resultsGrid = document.getElementById('resultsGrid');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
+
+    await initFilters();
 
     // --- 2. 初始搜索逻辑 ---
     const params = new URLSearchParams(window.location.search);
@@ -239,8 +241,23 @@ function renderSidebarStats(cases) {
 
     // 渲染 UI（保持不变）
     updateStatsUI(yearMap, geoMap);
-    updateDropdown('filterType', typeSet, '全部类型');
+
     updateDropdown('filterReason', reasonSet, '全部案由');
+}
+
+async function initFilters() {
+    try {
+        const [typesRes, reasonsRes] = await Promise.all([
+            fetch('/api/cases/types'),
+            fetch('/api/cases/reasons')
+        ]);
+        const types = await typesRes.json();
+        const reasons = await reasonsRes.json();
+        updateDropdown('filterType', new Set(types), '全部类型');
+        updateDropdown('filterReason', new Set(reasons), '全部案由');
+    } catch (err) {
+        console.error('加载筛选项失败', err);
+    }
 }
 
 /**
