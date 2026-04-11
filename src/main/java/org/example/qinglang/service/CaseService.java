@@ -1,13 +1,15 @@
 package org.example.qinglang.service;
 
-import org.example.qinglang.entity.CaseDetailEntity;
-import org.example.qinglang.entity.CaseEntity;
-import org.example.qinglang.entity.CaseEsEntity;
-import org.example.qinglang.entity.PartyEntity;
+import org.example.qinglang.entity.*;
 import org.example.qinglang.repository.CaseDetailRepository;
 import org.example.qinglang.repository.CaseRepository;
+import org.example.qinglang.repository.LegalSupervisionRepository;
+import org.example.qinglang.repository.PartyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +22,12 @@ public class CaseService {
 
     @Autowired
     private CaseDetailRepository caseDetailRepository;
+
+    @Autowired
+    private PartyRepository partyRepository;
+
+    @Autowired
+    private LegalSupervisionRepository supervisionRepository;
 
     public List<CaseEntity> getAllCases() {
         return caseRepository.findAll();
@@ -42,43 +50,52 @@ public class CaseService {
     }
 
     public CaseEntity getCaseById(Integer id) {
-        // 1. 先查基础表 (cases)
-        CaseEntity caseEntity = caseRepository.findById(id)
+        // 1. 使用 JOIN FETCH 一次性加载 parties，避免懒加载异常
+        CaseEntity caseEntity = caseRepository.findByIdWithParties(id)
                 .orElseThrow(() -> new RuntimeException("案件基础信息未找到"));
 
-        // 2. 再查详情表 (case_details)
+        // 2. 填充案由
         caseDetailRepository.findByCaseId(id).ifPresent(detail -> {
-            // 将详情表的 case_reason 赋值给实体类的 causeOfAction 字段
             caseEntity.setCauseOfAction(detail.getCaseReason());
+        });
+
+        // 3. 填充监督评价（将评价文本放入 transient 字段）
+        supervisionRepository.findByCaseId(id).ifPresent(sup -> {
+            caseEntity.setSupervisionComment(sup.getClueDescription()); // 需在 CaseEntity 中添加 transient 字段
         });
 
         return caseEntity;
     }
 
+    // 修改 CaseService.java 中的 advancedSearch 方法
     public List<CaseEsEntity> advancedSearch(String keyword, String caseType, String caseReason) {
-        // 从 MySQL 中按条件查询 CaseEntity 列表（已包含 parties 懒加载，但不会自动填充 caseReason）
         List<CaseEntity> caseEntities = caseRepository.findByAdvancedCriteria(keyword, caseType, caseReason);
 
-        // 转换为前端需要的 CaseEsEntity 格式
         return caseEntities.stream().map(caseEntity -> {
             CaseEsEntity esEntity = new CaseEsEntity();
             esEntity.setCaseId(caseEntity.getCaseId());
-            esEntity.setTitle(caseEntity.getCaseName());                     // title 用案件名称
+            esEntity.setTitle(caseEntity.getCaseName());
             esEntity.setCaseType(caseEntity.getCaseType());
+            esEntity.setStartDate(caseEntity.getAcceptanceDate() != null ? caseEntity.getAcceptanceDate().toString() : null);
+            esEntity.setEndDate(caseEntity.getClosingDate() != null ? caseEntity.getClosingDate().toString() : null);
 
-            // 拼接 content 字段：包含案由（从 case_details 获取）、案件编号、适用法律等
+            // --- 核心修复：获取并设置案由 ---
             String causeOfAction = getCauseOfActionByCaseId(caseEntity.getCaseId());
+            esEntity.setCaseReason(causeOfAction == null ? "未知案由" : causeOfAction);
+
+            // 拼接 content 字段供搜索和展示
             String content = String.format("案由：%s。案件编号：%s。",
-                    causeOfAction == null ? "未知" : causeOfAction,
+                    esEntity.getCaseReason(),
                     caseEntity.getCaseNumber());
             esEntity.setContent(content);
 
-            // 提取当事人名称列表（用逗号分隔）
+            // 提取当事人
             String partyNames = caseEntity.getParties().stream()
                     .map(PartyEntity::getPartyName)
                     .collect(Collectors.joining(","));
             esEntity.setPartyNames(partyNames);
 
+            esEntity.setCourtName(caseEntity.getCourtName());
             return esEntity;
         }).collect(Collectors.toList());
     }
@@ -88,6 +105,80 @@ public class CaseService {
         return caseDetailRepository.findByCaseId(caseId)
                 .map(CaseDetailEntity::getCaseReason)
                 .orElse(null);
+    }
+
+    public Map<String, Object> getLeftPanelStats(String province) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 获取省份对应的案件ID列表（若province为null则查全部）
+        List<Integer> caseIds = getCaseIdsByProvince(province);
+
+        // 2. 总案件数
+        long totalCases = caseIds.size();
+        result.put("totalCases", totalCases);
+
+        // 3. 卷宗总页数（仅统计这些案件的totalPages）
+        Long totalPages = caseRepository.sumTotalPagesByCaseIds(caseIds);
+        result.put("totalPages", totalPages != null ? totalPages : 0L);
+
+        // 4. 适用法律/条约分布
+        List<String> lawTexts = caseDetailRepository.findApplicableLawsByCaseIds(caseIds);
+        Map<String, Integer> lawCountMap = new HashMap<>();
+        for (String text : lawTexts) {
+            if (text == null || text.trim().isEmpty()) continue;
+            for (String law : text.split("[,;，；、]")) {
+                String trimmed = law.trim();
+                if (!trimmed.isEmpty()) {
+                    lawCountMap.put(trimmed, lawCountMap.getOrDefault(trimmed, 0) + 1);
+                }
+            }
+        }
+        // 法律分布数据
+        List<Map<String, Object>> lawData = lawCountMap.entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", entry.getKey());
+                    map.put("value", entry.getValue());
+                    return map;
+                })
+                .collect(Collectors.toList());
+        result.put("lawData", lawData);
+
+        // 5. 当事国籍 Top5
+        List<Object[]> nationalityStats = partyRepository.countPartiesByNationalityAndCaseIds(caseIds);
+        long totalParties = nationalityStats.stream().mapToLong(arr -> (Long) arr[1]).sum();
+        List<Map<String, Object>> nationalityData = new ArrayList<>();
+        int rank = 0;
+        for (Object[] stat : nationalityStats) {
+            if (++rank > 5) break;
+            String country = (String) stat[0];
+            Long count = (Long) stat[1];
+            double percent = totalParties > 0 ? (count * 100.0 / totalParties) : 0;
+            nationalityData.add(Map.of("country", country, "count", count, "percent", percent));
+        }
+        result.put("nationalityData", nationalityData);
+
+        return result;
+    }
+
+    // 根据省份名称获取案件ID列表（省份简称需与视图province_stats中的province_name一致）
+    private List<Integer> getCaseIdsByProvince(String province) {
+        if (province == null || province.isEmpty()) {
+            return caseRepository.findAllCaseIds();
+        }
+        return caseRepository.findCaseIdsByProvince(province);
+    }
+
+    public Map<String, List<CaseEntity>> getCasesGroupedByType(String caseReason) {
+        List<CaseEntity> cases;
+        if (caseReason == null || caseReason.isEmpty()) {
+            cases = caseRepository.findAll();
+        } else {
+            cases = caseRepository.findByCaseReason(caseReason);
+        }
+        return cases.stream()
+                .filter(c -> c.getCaseType() != null)
+                .collect(Collectors.groupingBy(c -> c.getCaseType().trim()));
     }
 
 }

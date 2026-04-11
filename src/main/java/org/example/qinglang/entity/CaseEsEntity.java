@@ -25,5 +25,14 @@ public class CaseEsEntity {
     @Field(type = FieldType.Keyword)
     private String caseType;
 
+    @Field(type = FieldType.Date)
+    private String startDate; // 对应 acceptanceDate
 
+    @Field(type = FieldType.Date)
+    private String endDate;   // 对应 closingDate
+
+    @Field(type = FieldType.Keyword)
+    private String caseReason;
+
+    private String courtName;
 }

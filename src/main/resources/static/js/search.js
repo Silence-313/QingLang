@@ -1,36 +1,93 @@
 /**
- * ===== search.js - 搜索结果页重构版 =====
- * 1. 自动读取 URL 参数并回填
- * 2. 支持顶部输入框二次检索
- * 3. 左右两侧数据同步渲染（列表+画像）
+ * ===== search.js - 搜索结果页重构版 (修复词云注册问题) =====
  */
 
-// 在 search.js 开头或 DOMContentLoaded 回调中加入
 (function injectBtnStyles() {
     const style = document.createElement('style');
     style.innerHTML = `
-        .back-btn {
-            background: rgba(90, 180, 255, 0.2) !important;
-            border: 1px solid #5ab4ff !important;
-            color: #5ab4ff !important;
-            padding: 8px 18px !important;
-            border-radius: 4px !important;
-            cursor: pointer !important;
-            font-weight: bold !important;
-            transition: all 0.3s !important;
-            margin-left: 20px;
-        }
-        .back-btn:hover {
-            background: #5ab4ff !important;
-            color: #fff !important;
-            box-shadow: 0 0 15px rgba(90, 180, 255, 0.6) !important;
-        }
+        .back-btn { background: rgba(90, 180, 255, 0.2) !important; border: 1px solid #5ab4ff !important; color: #5ab4ff !important; padding: 8px 18px !important; border-radius: 4px !important; cursor: pointer !important; font-weight: bold !important; transition: all 0.3s !important; margin-left: 20px; }
+        .back-btn:hover { background: #5ab4ff !important; color: #fff !important; box-shadow: 0 0 15px rgba(90, 180, 255, 0.6) !important; }
+        .chart-box { height: 220px !important; padding: 15px 5px; margin-top: 10px; width: 100%; }
+        .empty-chart { color: #666; text-align: center; line-height: 200px; font-size: 0.9em; }
+        .case-card { cursor: pointer; }
     `;
     document.head.appendChild(style);
 })();
 
+// 全局图表实例
+let charts = { wordCloud: null, yearLine: null, geoBar: null };
+
+// ---------- 词云插件主动保障 ----------
+function ensureWordCloudRegistered() {
+    return new Promise((resolve) => {
+        // 如果已经注册了 wordCloud 系列，直接返回
+        if (echarts && echarts.ChartViewClass && echarts.ChartViewClass._classMap) {
+            const classMap = echarts.ChartViewClass._classMap;
+            if (classMap && classMap.wordCloud) {
+                resolve();
+                return;
+            }
+        }
+        // 否则等待脚本执行完成（最多等待 2 秒）
+        let attempts = 0;
+        const maxAttempts = 20;
+        const interval = setInterval(() => {
+            attempts++;
+            if (echarts && echarts.ChartViewClass && echarts.ChartViewClass._classMap) {
+                const classMap = echarts.ChartViewClass._classMap;
+                if (classMap && classMap.wordCloud) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                console.warn('词云插件未成功注册，将使用降级显示');
+                resolve(); // 仍继续执行，但显示错误信息
+            }
+        }, 100);
+    });
+}
+
+// 安全销毁图表实例
+function safeDispose(chartInstance) {
+    if (!chartInstance) return;
+    try {
+        if (!chartInstance.isDisposed()) {
+            chartInstance.dispose();
+        }
+    } catch (e) {
+        console.warn('图表销毁时出现可忽略的错误:', e.message);
+    }
+}
+
+// 清空容器内子元素，恢复默认类
+function clearChartContainer(domId) {
+    const dom = document.getElementById(domId);
+    if (!dom) return;
+    while (dom.firstChild) {
+        dom.removeChild(dom.firstChild);
+    }
+    dom.style.cssText = '';
+    dom.className = 'chart-box';
+}
+
+// 显示空数据占位
+function showEmptyMessage(domId, message) {
+    const dom = document.getElementById(domId);
+    if (!dom) return;
+    clearChartContainer(domId);
+    const p = document.createElement('p');
+    p.textContent = message;
+    p.style.color = '#666';
+    p.style.textAlign = 'center';
+    p.style.lineHeight = '200px';
+    p.style.margin = '0';
+    dom.appendChild(p);
+}
+
+// ---------- 页面初始化 ----------
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- 1. 初始化 DOM 元素 ---
     const keywordInput = document.getElementById('keywordInput');
     const reSearchBtn = document.getElementById('reSearchBtn');
     const resultsGrid = document.getElementById('resultsGrid');
@@ -38,277 +95,383 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await initFilters();
 
-    // --- 2. 初始搜索逻辑 ---
     const params = new URLSearchParams(window.location.search);
     const keyword = params.get('keyword');
 
     if (keyword) {
         const decodedKeyword = decodeURIComponent(keyword);
-        keywordInput.value = decodedKeyword; // 回填输入框
-        executeSearch(decodedKeyword);       // 执行搜索
+        keywordInput.value = decodedKeyword;
+        executeSearch(decodedKeyword);
     } else {
         resultsGrid.innerHTML = '<div class="empty-state">⚠️ 未提供搜索关键词</div>';
     }
 
-    // --- 3. 绑定交互事件 ---
-    // 点击搜索图标
     reSearchBtn.addEventListener('click', handleNewSearch);
-
-    // 输入框回车
-    keywordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleNewSearch();
-    });
+    keywordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleNewSearch(); });
 
     function handleNewSearch() {
         const newKwd = keywordInput.value.trim();
-        if (newKwd) {
-            // 通过修改 URL 触发刷新，保持状态可追溯
-            window.location.href = `/search-results?keyword=${encodeURIComponent(newKwd)}`;
-        }
+        if (newKwd) window.location.href = `/search-results?keyword=${encodeURIComponent(newKwd)}`;
     }
 
-    // 绑定新返回按钮
     const backBtn = document.getElementById('backToMainBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            window.location.href = '/main'; // 明确跳回指挥中心
-        });
-    }
+    if (backBtn) backBtn.addEventListener('click', () => { window.location.href = '/main'; });
 
-    // 监听筛选按钮点击
     applyFilterBtn.addEventListener('click', () => {
         const type = document.getElementById('filterType').value;
         const reason = document.getElementById('filterReason').value;
         const keyword = keywordInput.value.trim();
-
-        // 执行带有筛选条件的搜索
         executeFilteredSearch(keyword, type, reason);
     });
 });
 
+// ---------- 搜索与筛选 ----------
+async function executeSearch(keyword) {
+    const grid = document.getElementById('resultsGrid');
+    grid.innerHTML = '<div class="loading-state">⏳ 正在检索案件数据...</div>';
+    try {
+        const response = await fetch(`/api/cases/search?keyword=${encodeURIComponent(keyword)}`);
+        const cases = await response.json();
+        if (!cases || cases.length === 0) {
+            grid.innerHTML = `<div class="empty-state">📭 未找到相关案件</div>`;
+            return;
+        }
+        renderCaseCards(cases, keyword);
+        renderSidebarStats(cases);
+        updateReasonFilterFromCases(cases);
+    } catch (error) {
+        grid.innerHTML = `<div class="error-state">❌ 搜索失败: ${error.message}</div>`;
+    }
+}
+
 async function executeFilteredSearch(keyword, type, reason) {
     const grid = document.getElementById('resultsGrid');
-    grid.innerHTML = '<div class="loading-state">⏳ 正在按条件过滤数据...</div>';
-
+    grid.innerHTML = '<div class="loading-state">⏳ 正在过滤数据...</div>';
     try {
-        // 构建带有 Query 参数的 URL
         let url = `/api/cases/search?keyword=${encodeURIComponent(keyword)}`;
         if (type) url += `&caseType=${encodeURIComponent(type)}`;
         if (reason) url += `&caseReason=${encodeURIComponent(reason)}`;
-
         const response = await fetch(url);
-        const cases = await response.json();
-
-        if (!cases || cases.length === 0) {
-            grid.innerHTML = `<div class="empty-state">📭 该分类下未找到相关案件</div>`;
-            return;
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-
-        renderCaseCards(cases); // 重新渲染右侧列表
+        const cases = await response.json();
+        renderCaseCards(cases, keyword);
         renderSidebarStats(cases);
-        // 注意：筛选后通常不需要重新渲染左侧统计图，或者根据筛选结果更新统计
+        updateReasonFilterFromCases(cases);
     } catch (error) {
+        console.error('筛选请求失败:', error);
         grid.innerHTML = `<div class="error-state">❌ 过滤失败: ${error.message}</div>`;
     }
 }
 
-/**
- * 核心搜索执行函数
- */
-async function executeSearch(keyword) {
+// ---------- 卡片渲染 ----------
+function renderCaseCards(cases, keyword) {
     const grid = document.getElementById('resultsGrid');
-
-    // 显示加载状态
-    grid.innerHTML = '<div class="loading-state">⏳ 正在检索案件数据，请稍候...</div>';
-
-    try {
-        const response = await fetch(`/api/cases/search?keyword=${encodeURIComponent(keyword)}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP 错误: ${response.status}`);
-        }
-
-        const cases = await response.json();
-        console.log("🔍 搜索结果第一条数据详情:", cases[0]);
-
-        if (!cases || cases.length === 0) {
-            grid.innerHTML = `<div class="empty-state">📭 未找到与“${escapeHtml(keyword)}”相关的案件</div>`;
-            return;
-        }
-
-        // --- 同步渲染两侧内容 ---
-        renderCaseCards(cases);      // 右侧：列表
-        renderSidebarStats(cases);   // 左侧：画像
-
-    } catch (error) {
-        console.error('搜索流程异常:', error);
-        grid.innerHTML = `<div class="error-state">❌ 搜索失败: ${escapeHtml(error.message)}</div>`;
+    if (!cases || cases.length === 0) {
+        grid.innerHTML = '<div class="empty-state">📭 没有符合条件的案件</div>';
+        return;
     }
-
-    try {
-        const response = await fetch(`/api/cases/search?keyword=${encodeURIComponent(keyword)}`);
-        const cases = await response.json();
-
-        // --- 核心调试代码 ---
-        console.log('【后端原始数据】:', cases);
-        // ------------------
-
-        renderCaseCards(cases);
-    } catch (error) {
-        console.error('搜索异常:', error);
-    }
-}
-
-/**
- * 渲染右侧案件列表 (采用左侧同款 UI)
- */
-function renderCaseCards(cases) {
-    const grid = document.getElementById('resultsGrid');
-    const currentKwd = new URLSearchParams(window.location.search).get('keyword') || '';
 
     grid.innerHTML = cases.map(c => {
-        // 1. 案由解析：从 content 字符串中提取“案由：xxx。”
-        let displayType = "刑事案件";
-        if (c.content && c.content.includes("案由：")) {
-            displayType = c.content.split("。")[0].replace("案由：", "");
-        }
-
-        // 2. 详情摘要：截取 content 的后续部分
-        let summary = "暂无详情信息";
-        if (c.content) {
-            summary = c.content.split("。").slice(1).join("。");
-        }
-
+        const prosecutor = extractProsecutor(c.courtName || c.title);
+        const summary = c.content ? c.content.split('。')[1] || c.content : "暂无摘要";
+        const caseId = c.caseId || '';
         return `
-        <div class="case-card" onclick="window.location.href='/case/detail?id=${c.caseId}&fromKwd=${encodeURIComponent(currentKwd)}'">
-            <div class="card-title">${escapeHtml(c.title || '未知案件')}</div>
-            <div class="card-body">
-                <strong>核心摘要：</strong><span style="color: #a0c4e8;">${escapeHtml(summary)}</span><br>
-                <small style="color: #ffd166;">类型：${escapeHtml(displayType)}</small>
-            </div>
-            <div class="card-footer">
-                <span>📍 北京市检察院 (由案号推断)</span>
-                <span>📅 ${extractYear(c.title)}年</span>
-            </div>
-        </div>
-        `;
+            <div class="case-card" onclick="window.location.href='/case/detail?id=${caseId}&fromKwd=${encodeURIComponent(keyword || '')}'">
+                <div class="card-title">${escapeHtml(c.title || '无标题')}</div>
+                <div class="card-body">
+                    <strong>案件内容：</strong><span style="color: #a0c4e8;">${escapeHtml(summary)}</span><br>
+                    <small style="color: #ffd166;">案由：${escapeHtml(c.caseReason || '涉外案件')}</small>
+                </div>
+                <div class="card-footer">
+                    <span>📍 ${escapeHtml(prosecutor)}</span>
+                    <span>📅 ${c.endDate ? c.endDate.substring(0, 4) : '进行中'}</span>
+                </div>
+            </div>`;
     }).join('');
 }
 
-/**
- * 渲染左侧画像统计数据 & 提取动态筛选项
- */
+// ---------- 侧边栏统计与图表 ----------
 function renderSidebarStats(cases) {
-    const geoMap = {"北京": 0, "其他": 0};
+    // 销毁所有旧图表
+    Object.keys(charts).forEach(key => {
+        safeDispose(charts[key]);
+        charts[key] = null;
+    });
+
     const yearMap = {};
-    const reasonSet = new Set();
-    const typeSet = new Set();
+    const geoStats = {};
+    const totalSearchCount = cases.length;
 
     cases.forEach(c => {
-        if (!c) return; // 安全检查：防止数组项本身为空
-
-        // --- 1. 案件类型提取 (增加空值保护) ---
-        let typeValue = (c.caseType && c.caseType.trim()) ? c.caseType : null;
-
-        // 仅当 content 存在时才进行 match
-        if (!typeValue && c.content) {
-            if (c.content.includes("刑事") || c.content.includes("罪")) typeValue = "刑事案件";
-            else if (c.content.includes("民事") || c.content.includes("纠纷")) typeValue = "民事案件";
-            else if (c.content.includes("公益诉讼")) typeValue = "公益诉讼";
-            else if (c.content.includes("行政")) typeValue = "行政案件";
+        // 年份
+        let year = '未知';
+        if (c.endDate && c.endDate.length >= 4) {
+            year = c.endDate.substring(0, 4);
+        } else if (c.content) {
+            const match = c.content.match(/20\d{2}/);
+            year = match ? match[0] : '未知';
         }
-        typeSet.add(typeValue || "其他类型");
+        if (year !== '未知') yearMap[year] = (yearMap[year] || 0) + 1;
 
-        // --- 2. 案由提取 (修复 match 报错位置) ---
-        let reasonValue = c.caseReason;
+        // 地区
+        const province = extractProvinceFromCourt(c.courtName || '');
+        if (!geoStats[province]) geoStats[province] = { closed: 0 };
+        if (c.endDate) geoStats[province].closed++;
+    });
 
-        // 关键点：必须先判断 c.content 是否存在，再调用 .match()
-        if (!reasonValue && c.content) {
-            const match = c.content.match(/案由：(.*?)[。]/);
-            reasonValue = match ? match[1] : null;
+    // 词云需要等待插件注册
+    // ensureWordCloudRegistered().then(() => {
+    //     initWordCloud(cases);
+    // });
+    initYearLineChart(yearMap);
+    initGeoBarChart(geoStats, totalSearchCount);
+}
+
+function updateReasonFilterFromCases(cases) {
+    const reasonSet = new Set();
+    cases.forEach(c => {
+        if (c.caseReason && c.caseReason !== '未知案由') {
+            reasonSet.add(c.caseReason);
         }
-        if (reasonValue) reasonSet.add(reasonValue);
+    });
+    updateDropdown('filterReason', reasonSet, '全部案由');
+}
 
-        // --- 3. 统计年份和地区 (增加标题空值保护) ---
-        if (c.title) {
-            const year = extractYear(c.title);
-            yearMap[year] = (yearMap[year] || 0) + 1;
-            if (c.title.includes("京")) geoMap["北京"]++;
-            else if (c.title.includes("沪")) geoMap["上海"]++;
-            else geoMap["其他"]++;
+// ---------- 图表初始化函数 ----------
+function initWordCloud(cases) {
+    const dom = document.getElementById('geoDistribution');
+    if (!dom) return;
+
+    // 清空旧内容
+    clearChartContainer('geoDistribution');
+
+    // 统计案由
+    const counts = {};
+    cases.forEach(c => {
+        let reason = c.caseReason || c.causeOfAction || '';
+        if (reason && reason.trim() !== '' && reason !== '未知案由' && reason !== '涉外案件') {
+            counts[reason] = (counts[reason] || 0) + 1;
         }
     });
 
-    // 渲染 UI（保持不变）
-    updateStatsUI(yearMap, geoMap);
+    const data = Object.entries(counts).map(([name, value]) => ({
+        name: name,
+        value: value * 20
+    }));
 
-    updateDropdown('filterReason', reasonSet, '全部案由');
+    if (data.length === 0) {
+        showEmptyMessage('geoDistribution', '暂无有效案由数据');
+        return;
+    }
+
+    // 尝试初始化，若系列未注册则降级显示
+    try {
+        charts.wordCloud = echarts.init(dom);
+        const option = {
+            series: [{
+                type: 'wordCloud',
+                shape: 'circle',
+                sizeRange: [14, 35],
+                rotationRange: [0, 0],
+                gridSize: 8,
+                drawOutOfBound: false,
+                layoutAnimation: true,
+                textStyle: {
+                    fontFamily: 'Microsoft YaHei, sans-serif',
+                    fontWeight: 'normal',
+                    color: function () {
+                        return `rgb(${Math.round(Math.random() * 160 + 90)}, ${Math.round(Math.random() * 160 + 90)}, 255)`;
+                    }
+                },
+                emphasis: {
+                    textStyle: {
+                        fontWeight: 'bold',
+                        color: '#ffd166'
+                    }
+                },
+                data: data
+            }]
+        };
+        charts.wordCloud.setOption(option);
+        setTimeout(() => {
+            if (charts.wordCloud && !charts.wordCloud.isDisposed()) {
+                charts.wordCloud.resize();
+            }
+        }, 100);
+    } catch (e) {
+        console.error('词云渲染失败:', e);
+        showEmptyMessage('geoDistribution', '词云组件加载失败');
+    }
+}
+
+function initYearLineChart(yearMap) {
+    const domId = 'yearTrend';
+    const dom = document.getElementById(domId);
+    if (!dom) return;
+
+    safeDispose(charts.yearLine);
+    charts.yearLine = null;
+
+    const years = Object.keys(yearMap).sort();
+    if (years.length === 0) {
+        showEmptyMessage(domId, '暂无趋势数据');
+        return;
+    }
+
+    clearChartContainer(domId);
+    charts.yearLine = echarts.init(dom);
+    charts.yearLine.setOption({
+        // title: { text: '📈 案件年度趋势', textStyle: { color: '#00f2fe', fontSize: 13 }, left: 'center' },
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: years, axisLabel: { color: '#a0c4e8' } },
+        yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#a0c4e8' } },
+        series: [{
+            data: years.map(y => yearMap[y]),
+            type: 'line',
+            smooth: true,
+            areaStyle: { color: 'rgba(0, 242, 254, 0.2)' },
+            itemStyle: { color: '#00f2fe' }
+        }]
+    });
+}
+
+function initGeoBarChart(geoStats, totalSearchCount) {
+    const domId = 'resultAnalysis';
+    const dom = document.getElementById(domId);
+    if (!dom) return;
+
+    safeDispose(charts.geoBar);
+    charts.geoBar = null;
+
+    const names = Object.keys(geoStats);
+    if (names.length === 0) {
+        showEmptyMessage(domId, '暂无地区数据');
+        return;
+    }
+
+    const rates = names.map(n => {
+        return totalSearchCount > 0
+            ? ((geoStats[n].closed / totalSearchCount) * 100).toFixed(1)
+            : 0;
+    });
+
+    clearChartContainer(domId);
+    charts.geoBar = echarts.init(dom);
+    charts.geoBar.setOption({
+        // title: {
+        //     text: '📊 地区结案贡献率 (基于搜索总量)',
+        //     textStyle: { color: '#00f2fe', fontSize: 13 },
+        //     left: 'center'
+        // },
+        tooltip: {
+            trigger: 'axis',
+            formatter: function(params) {
+                const i = params[0].dataIndex;
+                const name = names[i];
+                const count = geoStats[name].closed;
+                return `${name}<br/>结案数：${count} 件<br/>占搜索总量：${params[0].value}%`;
+            }
+        },
+        xAxis: {
+            type: 'category',
+            data: names,
+            axisLabel: { color: '#a0c4e8' }
+        },
+        yAxis: {
+            type: 'value',
+            max: 100,
+            axisLabel: {
+                color: '#a0c4e8',
+                formatter: '{value}%'
+            },
+            splitLine: { lineStyle: { color: '#333' } }
+        },
+        series: [{
+            name: '占比',
+            data: rates,
+            type: 'bar',
+            barWidth: '40%',
+            label: {
+                show: true,
+                position: 'top',
+                formatter: '{c}%',
+                color: '#00f2fe'
+            },
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#00f2fe' },
+                    { offset: 1, color: '#5ab4ff' }
+                ])
+            }
+        }]
+    });
+}
+
+// ---------- 辅助函数 ----------
+function extractProvinceFromCourt(courtName) {
+    if (!courtName) return '其他';
+    const cn = courtName;
+
+    if (cn.includes('北京') || cn.includes('京')) return '北京';
+    if (cn.includes('上海') || cn.includes('沪')) return '上海';
+    if (cn.includes('天津') || cn.includes('津')) return '天津';
+    if (cn.includes('重庆') || cn.includes('渝')) return '重庆';
+
+    const provinces = [
+        '河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东',
+        '河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海',
+        '台湾','内蒙古','广西','西藏','宁夏','新疆','香港','澳门'
+    ];
+    for (let p of provinces) {
+        if (cn.includes(p)) return p;
+    }
+
+    if (cn.includes('西安') || cn.includes('陕')) return '陕西';
+    if (cn.includes('广州') || cn.includes('深圳') || cn.includes('粤')) return '广东';
+    if (cn.includes('杭州') || cn.includes('宁波') || cn.includes('浙')) return '浙江';
+    if (cn.includes('南京') || cn.includes('苏州') || cn.includes('苏')) return '江苏';
+    if (cn.includes('武汉') || cn.includes('鄂')) return '湖北';
+    if (cn.includes('成都') || cn.includes('川')) return '四川';
+    if (cn.includes('最高人民法院')) return '北京';
+
+    return '其他';
 }
 
 async function initFilters() {
     try {
-        const [typesRes, reasonsRes] = await Promise.all([
-            fetch('/api/cases/types'),
-            fetch('/api/cases/reasons')
-        ]);
-        const types = await typesRes.json();
-        const reasons = await reasonsRes.json();
-        updateDropdown('filterType', new Set(types), '全部类型');
-        updateDropdown('filterReason', new Set(reasons), '全部案由');
-    } catch (err) {
-        console.error('加载筛选项失败', err);
-    }
+        const tRes = await fetch('/api/cases/types');
+        updateDropdown('filterType', new Set(await tRes.json()), '全部类型');
+        updateDropdown('filterReason', new Set(), '请先搜索');
+    } catch (e) { console.error("初始化筛选失败"); }
 }
 
-/**
- * 通用的下拉框更新函数
- * @param {string} elementId - select 元素的 ID
- * @param {Set} dataSet - 去重后的数据集合
- * @param {string} defaultText - 默认选中的提示文字
- */
-function updateDropdown(elementId, dataSet, defaultText) {
-    const select = document.getElementById(elementId);
-    if (!select) return;
-
-    // 清空并设置默认项
-    select.innerHTML = `<option value="">${defaultText}</option>`;
-
-    // 填充动态内容
+function updateDropdown(id, dataSet, defaultText) {
+    const s = document.getElementById(id);
+    if (!s) return;
+    s.innerHTML = `<option value="">${defaultText}</option>`;
     Array.from(dataSet).sort().forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item;
-        opt.textContent = item;
-        select.appendChild(opt);
+        const o = document.createElement('option');
+        o.value = o.textContent = item;
+        s.appendChild(o);
     });
-
-    // 增加视觉反馈
-    select.style.borderColor = "#00f2fe";
-    setTimeout(() => {
-        select.style.borderColor = "rgba(80, 160, 255, 0.3)";
-    }, 800);
 }
 
-// 辅助函数：将原有的渲染逻辑抽离
-function updateStatsUI(yearMap, geoMap) {
-    const yearBox = document.getElementById('yearTrend');
-    yearBox.innerHTML = `<ul>${Object.entries(yearMap).map(([y, count]) =>
-        `<li><span>${y}年</span><strong>${count} 件</strong></li>`).join('')}</ul>`;
-
-    const geoBox = document.getElementById('geoDistribution');
-    geoBox.innerHTML = `<ul>${Object.entries(geoMap).filter(e => e[1] > 0).map(([n, count]) =>
-        `<li><span>${n}地区</span><strong>${count} 件</strong></li>`).join('')}</ul>`;
+function extractProsecutor(text) {
+    if (!text) return "北京市检察院";
+    const m = text.match(/([^：\/\s\n]+检察院)/);
+    if (m) return m[1].trim();
+    const c = text.match(/([^：\/\s\n]+法院)/);
+    return c ? c[1].replace("法院", "检察院") : "北京市检察院";
 }
 
-function extractYear(str) {
-    const match = str.match(/20\d{2}/);
-    return match ? match[0] : "未知";
+function escapeHtml(s) {
+    if (!s) return '';
+    const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(s).replace(/[&<>"']/g, k => m[k]);
 }
 
-/**
- * 防 XSS 注入辅助函数
- */
-function escapeHtml(str) {
-    if (!str) return '';
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return String(str).replace(/[&<>"']/g, m => map[m]);
-}
+window.addEventListener('resize', () => {
+    Object.values(charts).forEach(c => c && c.resize());
+});

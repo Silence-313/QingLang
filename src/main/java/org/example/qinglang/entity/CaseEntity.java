@@ -34,4 +34,7 @@ public class CaseEntity {
     // 新增：建立与 PartyEntity 的一对多关联[cite: 18]
     @OneToMany(mappedBy = "caseEntity", fetch = FetchType.LAZY)
     private List<PartyEntity> parties;
+
+    @Transient
+    private String supervisionComment;   // 法律监督评价
 }

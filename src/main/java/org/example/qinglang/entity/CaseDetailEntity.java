@@ -19,7 +19,7 @@ public class CaseDetailEntity {
     @Column(name = "case_reason") // 映射数据库的 case_reason
     private String caseReason;
 
-    private BigDecimal involvedAmount;
+//    private BigDecimal involvedAmount;
     private Boolean hasOverseasEvidence;
     private String overseasEvidenceType;
     private String infringementLocation;

@@ -141,7 +141,7 @@
 .stats-card h3 {
     color: #5ab4ff;
     font-size: 15px; /* 略微调小字体 */
-    margin-bottom: 10px; /* 减少标题下方的空隙 */
+    /*margin-bottom: 10px; !* 减少标题下方的空隙 *!*/
     border-bottom: 1px solid rgba(60, 140, 255, 0.1);
     padding-bottom: 8px;
 }
@@ -158,9 +158,9 @@
 .chart-box {
     width: 100%;
     height: 220px;
-    margin-top: 15px;
+    /*margin-top: 15px;*/
     background: rgba(30, 60, 100, 0.2); /* 复用 placeholder-text 背景[cite: 30] */
-    border: 1px solid rgba(80, 160, 255, 0.1);
+    border: 1px solid rgba(10, 160, 255, 0.1);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -435,4 +435,17 @@
 .case-card:hover {
     background: rgba(80, 160, 255, 0.1);
     transform: translateX(5px);
+}
+
+/* search.css */
+#yearTrend {
+    width: 100%;
+    height: 250px; /* 必须显式指定高度 */
+    min-height: 250px;
+    /*margin-top: 15px;*/
+}
+
+#geoDistribution, #yearTrend, #resultAnalysis {
+    height: 220px !important;
+    width: 100%;
 }

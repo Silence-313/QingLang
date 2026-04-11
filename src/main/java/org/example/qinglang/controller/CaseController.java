@@ -52,7 +52,12 @@ public class CaseController {
             @RequestParam String keyword,
             @RequestParam(required = false) String caseType,
             @RequestParam(required = false) String caseReason) {
-        // 调用服务层的高级搜索方法，返回转换后的 CaseEsEntity 列表
+        if (caseType != null && caseType.trim().isEmpty()) {
+            caseType = null;
+        }
+        if (caseReason != null && caseReason.trim().isEmpty()) {
+            caseReason = null;
+        }
         return caseService.advancedSearch(keyword, caseType, caseReason);
     }
 
@@ -65,4 +70,11 @@ public class CaseController {
     public List<String> getAllCaseReasons() {
         return caseDetailRepository.findAllDistinctCaseReasons();
     }
+
+    @GetMapping("/grouped-by-reason")
+    public Map<String, List<CaseEntity>> getCasesGroupedByTypeWithReason(
+            @RequestParam(required = false) String caseReason) {
+        return caseService.getCasesGroupedByType(caseReason);
+    }
+
 }

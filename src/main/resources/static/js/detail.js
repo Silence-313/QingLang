@@ -36,16 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             const params = new URLSearchParams(window.location.search);
-            const fromKwd = params.get('fromKwd'); // 这里是关键：必须能拿到参数
-
+            const fromKwd = params.get('fromKwd');
             if (fromKwd) {
-                // 成功拿到关键词，跳回搜索页
                 window.location.href = `/search-results?keyword=${encodeURIComponent(fromKwd)}`;
-            } else if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) {
-                // 没有关键词但有来源页，使用历史回退
+            } else if (document.referrer && document.referrer.includes(window.location.host)) {
                 window.history.back();
             } else {
-                // 两个都失败，进入你看到的“回到 index”逻辑
                 window.location.href = '/';
             }
         });
@@ -124,6 +120,7 @@ function renderDetail(data) {
     // 法律监督评价
     const supervisionBox = document.getElementById('supervisionBox');
     if (supervisionBox) {
+        // 监督评价部分
         if (data.supervisionComment) {
             supervisionBox.innerHTML = `<p class="item-val">${escapeHtml(data.supervisionComment)}</p>`;
         } else {

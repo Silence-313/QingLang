@@ -49,9 +49,11 @@
         </div>
 
         <div class="stats-card">
-            <h3>📊 关键词画像</h3>
-            <div id="geoDistribution" class="chart-box">地区分布加载中...</div>
+<!--            <h3>📊 关键词画像</h3>-->
+<!--            <div id="geoDistribution" class="chart-box">地区分布加载中...</div>-->
+            <h3>📈 案件年度趋势</h3>
             <div id="yearTrend" class="chart-box">年份趋势加载中...</div>
+            <h3>📊 地区结案贡献率 (基于搜索总量)</h3>
             <div id="resultAnalysis" class="chart-box">裁判成果对比...</div>
         </div>
     </div>
@@ -68,6 +70,10 @@
 
     </div>
 </div>
+<!-- 1. 先加载 ECharts 主库 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+<!-- 2. 再加载词云插件（依赖于 ECharts） -->
+<script th:src="@{/js/echarts-wordcloud.min.js}"></script>
 
 <script th:src="@{/js/search.js}"></script>
 </body>

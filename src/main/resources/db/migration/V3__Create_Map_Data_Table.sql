@@ -1,46 +1,494 @@
--- 1. 删除旧视图
+-- V3__Create_Map_Data_Table.sql （完整增强版：细分到省、市/区全覆盖）
+
+-- 删除可能已存在的同名表或视图
+DROP TABLE IF EXISTS province_stats;
 DROP VIEW IF EXISTS province_stats;
 
--- 2. 创建健壮的汇总视图
-CREATE VIEW province_stats AS
-WITH cleaned_cases AS (
-    SELECT
-        case_id,
-        -- 清洗逻辑：
-        -- 1. 移除 '一审：', '二审：', '审查起诉：' 等前缀
-        -- 2. 移除空格和 '检察院' 关键字
-        -- 3. 针对 '最高人民法院' 特殊处理为 '北京'
-        -- 4. 最后取前两个字
-        CASE
-            WHEN court_name LIKE '%最高人民法院%' THEN '北京'
-            ELSE SUBSTRING(
-                    REGEXP_REPLACE(
-                            REGEXP_REPLACE(court_name, '^(一审|二审|审查起诉|再审)[:： ]*', ''),
-                            '^检察院[ ]*', ''
-                    ), 1, 2
-                 )
-            END AS clean_province
-    FROM cases
-)
+CREATE OR REPLACE VIEW province_stats AS
 SELECT
-    cc.clean_province AS province_name,
-    COUNT(DISTINCT c.case_id) AS case_count,
-
-    -- 风险等级计算
     CASE
-        WHEN COUNT(DISTINCT ls.supervision_id) > 10 THEN '极高'
-        WHEN COUNT(DISTINCT ls.supervision_id) > 5 THEN '高'
-        WHEN COUNT(DISTINCT ls.supervision_id) > 2 THEN '中'
+        -- ================= 最高人民法院 =================
+        WHEN court_name LIKE '%最高人民法院%' THEN '北京'
+
+        -- ================= 专门法院（根据所在城市映射） =================
+        WHEN court_name LIKE '%北京知识产权%' THEN '北京'
+        WHEN court_name LIKE '%上海知识产权%' THEN '上海'
+        WHEN court_name LIKE '%广州知识产权%' THEN '广东'
+        WHEN court_name LIKE '%海口海事%' THEN '海南'
+        WHEN court_name LIKE '%西安铁路%' THEN '陕西'
+        WHEN court_name LIKE '%武汉海事%' THEN '湖北'
+        WHEN court_name LIKE '%宁波海事%' THEN '浙江'
+        WHEN court_name LIKE '%青岛海事%' THEN '山东'
+        WHEN court_name LIKE '%大连海事%' THEN '辽宁'
+        WHEN court_name LIKE '%厦门海事%' THEN '福建'
+        WHEN court_name LIKE '%北海海事%' THEN '广西'
+        WHEN court_name LIKE '%上海海事%' THEN '上海'
+        WHEN court_name LIKE '%天津海事%' THEN '天津'
+        WHEN court_name LIKE '%南京海事%' THEN '江苏'
+
+        -- ================= 省直辖县级市 / 特殊地区 =================
+        WHEN court_name LIKE '%绥芬河%' THEN '黑龙江'
+        WHEN court_name LIKE '%霍尔果斯%' THEN '新疆'
+        WHEN court_name LIKE '%阿拉山口%' THEN '新疆'
+        WHEN court_name LIKE '%满洲里%' THEN '内蒙古'
+        WHEN court_name LIKE '%二连浩特%' THEN '内蒙古'
+
+        -- ================= 直辖市直接匹配 =================
+        WHEN court_name LIKE '%北京%' THEN '北京'
+        WHEN court_name LIKE '%天津%' THEN '天津'
+        WHEN court_name LIKE '%上海%' THEN '上海'
+        WHEN court_name LIKE '%重庆%' THEN '重庆'
+
+        -- ================= 省份直接匹配（覆盖所有省级行政区） =================
+        WHEN court_name LIKE '%河北%' THEN '河北'
+        WHEN court_name LIKE '%山西%' THEN '山西'
+        WHEN court_name LIKE '%内蒙古%' THEN '内蒙古'
+        WHEN court_name LIKE '%辽宁%' THEN '辽宁'
+        WHEN court_name LIKE '%吉林%' THEN '吉林'
+        WHEN court_name LIKE '%黑龙江%' THEN '黑龙江'
+        WHEN court_name LIKE '%江苏%' THEN '江苏'
+        WHEN court_name LIKE '%浙江%' THEN '浙江'
+        WHEN court_name LIKE '%安徽%' THEN '安徽'
+        WHEN court_name LIKE '%福建%' THEN '福建'
+        WHEN court_name LIKE '%江西%' THEN '江西'
+        WHEN court_name LIKE '%山东%' THEN '山东'
+        WHEN court_name LIKE '%河南%' THEN '河南'
+        WHEN court_name LIKE '%湖北%' THEN '湖北'
+        WHEN court_name LIKE '%湖南%' THEN '湖南'
+        WHEN court_name LIKE '%广东%' THEN '广东'
+        WHEN court_name LIKE '%广西%' THEN '广西'
+        WHEN court_name LIKE '%海南%' THEN '海南'
+        WHEN court_name LIKE '%四川%' THEN '四川'
+        WHEN court_name LIKE '%贵州%' THEN '贵州'
+        WHEN court_name LIKE '%云南%' THEN '云南'
+        WHEN court_name LIKE '%西藏%' THEN '西藏'
+        WHEN court_name LIKE '%陕西%' THEN '陕西'
+        WHEN court_name LIKE '%甘肃%' THEN '甘肃'
+        WHEN court_name LIKE '%青海%' THEN '青海'
+        WHEN court_name LIKE '%宁夏%' THEN '宁夏'
+        WHEN court_name LIKE '%新疆%' THEN '新疆'
+        WHEN court_name LIKE '%台湾%' THEN '台湾'
+        WHEN court_name LIKE '%香港%' THEN '香港'
+        WHEN court_name LIKE '%澳门%' THEN '澳门'
+
+        -- ================= 通过地级市/地区/自治州/盟反查省份（按拼音排序） =================
+        -- 安徽省
+        WHEN court_name LIKE '%合肥%' THEN '安徽'
+        WHEN court_name LIKE '%芜湖%' THEN '安徽'
+        WHEN court_name LIKE '%蚌埠%' THEN '安徽'
+        WHEN court_name LIKE '%淮南%' THEN '安徽'
+        WHEN court_name LIKE '%马鞍山%' THEN '安徽'
+        WHEN court_name LIKE '%淮北%' THEN '安徽'
+        WHEN court_name LIKE '%铜陵%' THEN '安徽'
+        WHEN court_name LIKE '%安庆%' THEN '安徽'
+        WHEN court_name LIKE '%黄山%' THEN '安徽'
+        WHEN court_name LIKE '%滁州%' THEN '安徽'
+        WHEN court_name LIKE '%阜阳%' THEN '安徽'
+        WHEN court_name LIKE '%宿州%' THEN '安徽'
+        WHEN court_name LIKE '%六安%' THEN '安徽'
+        WHEN court_name LIKE '%亳州%' THEN '安徽'
+        WHEN court_name LIKE '%池州%' THEN '安徽'
+        WHEN court_name LIKE '%宣城%' THEN '安徽'
+
+        -- 福建省
+        WHEN court_name LIKE '%福州%' THEN '福建'
+        WHEN court_name LIKE '%厦门%' THEN '福建'
+        WHEN court_name LIKE '%莆田%' THEN '福建'
+        WHEN court_name LIKE '%三明%' THEN '福建'
+        WHEN court_name LIKE '%泉州%' THEN '福建'
+        WHEN court_name LIKE '%漳州%' THEN '福建'
+        WHEN court_name LIKE '%南平%' THEN '福建'
+        WHEN court_name LIKE '%龙岩%' THEN '福建'
+        WHEN court_name LIKE '%宁德%' THEN '福建'
+
+        -- 甘肃省
+        WHEN court_name LIKE '%兰州%' THEN '甘肃'
+        WHEN court_name LIKE '%嘉峪关%' THEN '甘肃'
+        WHEN court_name LIKE '%金昌%' THEN '甘肃'
+        WHEN court_name LIKE '%白银%' THEN '甘肃'
+        WHEN court_name LIKE '%天水%' THEN '甘肃'
+        WHEN court_name LIKE '%武威%' THEN '甘肃'
+        WHEN court_name LIKE '%张掖%' THEN '甘肃'
+        WHEN court_name LIKE '%平凉%' THEN '甘肃'
+        WHEN court_name LIKE '%酒泉%' THEN '甘肃'
+        WHEN court_name LIKE '%庆阳%' THEN '甘肃'
+        WHEN court_name LIKE '%定西%' THEN '甘肃'
+        WHEN court_name LIKE '%陇南%' THEN '甘肃'
+        WHEN court_name LIKE '%临夏%' THEN '甘肃'
+        WHEN court_name LIKE '%甘南%' THEN '甘肃'
+
+        -- 广东省
+        WHEN court_name LIKE '%广州%' THEN '广东'
+        WHEN court_name LIKE '%韶关%' THEN '广东'
+        WHEN court_name LIKE '%深圳%' THEN '广东'
+        WHEN court_name LIKE '%珠海%' THEN '广东'
+        WHEN court_name LIKE '%汕头%' THEN '广东'
+        WHEN court_name LIKE '%佛山%' THEN '广东'
+        WHEN court_name LIKE '%江门%' THEN '广东'
+        WHEN court_name LIKE '%湛江%' THEN '广东'
+        WHEN court_name LIKE '%茂名%' THEN '广东'
+        WHEN court_name LIKE '%肇庆%' THEN '广东'
+        WHEN court_name LIKE '%惠州%' THEN '广东'
+        WHEN court_name LIKE '%梅州%' THEN '广东'
+        WHEN court_name LIKE '%汕尾%' THEN '广东'
+        WHEN court_name LIKE '%河源%' THEN '广东'
+        WHEN court_name LIKE '%阳江%' THEN '广东'
+        WHEN court_name LIKE '%清远%' THEN '广东'
+        WHEN court_name LIKE '%东莞%' THEN '广东'
+        WHEN court_name LIKE '%中山%' THEN '广东'
+        WHEN court_name LIKE '%潮州%' THEN '广东'
+        WHEN court_name LIKE '%揭阳%' THEN '广东'
+        WHEN court_name LIKE '%云浮%' THEN '广东'
+
+        -- 广西壮族自治区
+        WHEN court_name LIKE '%南宁%' THEN '广西'
+        WHEN court_name LIKE '%柳州%' THEN '广西'
+        WHEN court_name LIKE '%桂林%' THEN '广西'
+        WHEN court_name LIKE '%梧州%' THEN '广西'
+        WHEN court_name LIKE '%北海%' THEN '广西'
+        WHEN court_name LIKE '%防城港%' THEN '广西'
+        WHEN court_name LIKE '%钦州%' THEN '广西'
+        WHEN court_name LIKE '%贵港%' THEN '广西'
+        WHEN court_name LIKE '%玉林%' THEN '广西'
+        WHEN court_name LIKE '%百色%' THEN '广西'
+        WHEN court_name LIKE '%贺州%' THEN '广西'
+        WHEN court_name LIKE '%河池%' THEN '广西'
+        WHEN court_name LIKE '%来宾%' THEN '广西'
+        WHEN court_name LIKE '%崇左%' THEN '广西'
+
+        -- 贵州省
+        WHEN court_name LIKE '%贵阳%' THEN '贵州'
+        WHEN court_name LIKE '%六盘水%' THEN '贵州'
+        WHEN court_name LIKE '%遵义%' THEN '贵州'
+        WHEN court_name LIKE '%安顺%' THEN '贵州'
+        WHEN court_name LIKE '%毕节%' THEN '贵州'
+        WHEN court_name LIKE '%铜仁%' THEN '贵州'
+        WHEN court_name LIKE '%黔西南%' THEN '贵州'
+        WHEN court_name LIKE '%黔东南%' THEN '贵州'
+        WHEN court_name LIKE '%黔南%' THEN '贵州'
+
+        -- 海南省
+        WHEN court_name LIKE '%海口%' THEN '海南'
+        WHEN court_name LIKE '%三亚%' THEN '海南'
+        WHEN court_name LIKE '%三沙%' THEN '海南'
+        WHEN court_name LIKE '%儋州%' THEN '海南'
+
+        -- 河北省
+        WHEN court_name LIKE '%石家庄%' THEN '河北'
+        WHEN court_name LIKE '%唐山%' THEN '河北'
+        WHEN court_name LIKE '%秦皇岛%' THEN '河北'
+        WHEN court_name LIKE '%邯郸%' THEN '河北'
+        WHEN court_name LIKE '%邢台%' THEN '河北'
+        WHEN court_name LIKE '%保定%' THEN '河北'
+        WHEN court_name LIKE '%张家口%' THEN '河北'
+        WHEN court_name LIKE '%承德%' THEN '河北'
+        WHEN court_name LIKE '%沧州%' THEN '河北'
+        WHEN court_name LIKE '%廊坊%' THEN '河北'
+        WHEN court_name LIKE '%衡水%' THEN '河北'
+
+        -- 河南省
+        WHEN court_name LIKE '%郑州%' THEN '河南'
+        WHEN court_name LIKE '%开封%' THEN '河南'
+        WHEN court_name LIKE '%洛阳%' THEN '河南'
+        WHEN court_name LIKE '%平顶山%' THEN '河南'
+        WHEN court_name LIKE '%安阳%' THEN '河南'
+        WHEN court_name LIKE '%鹤壁%' THEN '河南'
+        WHEN court_name LIKE '%新乡%' THEN '河南'
+        WHEN court_name LIKE '%焦作%' THEN '河南'
+        WHEN court_name LIKE '%濮阳%' THEN '河南'
+        WHEN court_name LIKE '%许昌%' THEN '河南'
+        WHEN court_name LIKE '%漯河%' THEN '河南'
+        WHEN court_name LIKE '%三门峡%' THEN '河南'
+        WHEN court_name LIKE '%南阳%' THEN '河南'
+        WHEN court_name LIKE '%商丘%' THEN '河南'
+        WHEN court_name LIKE '%信阳%' THEN '河南'
+        WHEN court_name LIKE '%周口%' THEN '河南'
+        WHEN court_name LIKE '%驻马店%' THEN '河南'
+        WHEN court_name LIKE '%济源%' THEN '河南'
+
+        -- 黑龙江省
+        WHEN court_name LIKE '%哈尔滨%' THEN '黑龙江'
+        WHEN court_name LIKE '%齐齐哈尔%' THEN '黑龙江'
+        WHEN court_name LIKE '%鸡西%' THEN '黑龙江'
+        WHEN court_name LIKE '%鹤岗%' THEN '黑龙江'
+        WHEN court_name LIKE '%双鸭山%' THEN '黑龙江'
+        WHEN court_name LIKE '%大庆%' THEN '黑龙江'
+        WHEN court_name LIKE '%伊春%' THEN '黑龙江'
+        WHEN court_name LIKE '%佳木斯%' THEN '黑龙江'
+        WHEN court_name LIKE '%七台河%' THEN '黑龙江'
+        WHEN court_name LIKE '%牡丹江%' THEN '黑龙江'
+        WHEN court_name LIKE '%黑河%' THEN '黑龙江'
+        WHEN court_name LIKE '%绥化%' THEN '黑龙江'
+        WHEN court_name LIKE '%大兴安岭%' THEN '黑龙江'
+
+        -- 湖北省
+        WHEN court_name LIKE '%武汉%' THEN '湖北'
+        WHEN court_name LIKE '%黄石%' THEN '湖北'
+        WHEN court_name LIKE '%十堰%' THEN '湖北'
+        WHEN court_name LIKE '%宜昌%' THEN '湖北'
+        WHEN court_name LIKE '%襄阳%' THEN '湖北'
+        WHEN court_name LIKE '%鄂州%' THEN '湖北'
+        WHEN court_name LIKE '%荆门%' THEN '湖北'
+        WHEN court_name LIKE '%孝感%' THEN '湖北'
+        WHEN court_name LIKE '%荆州%' THEN '湖北'
+        WHEN court_name LIKE '%黄冈%' THEN '湖北'
+        WHEN court_name LIKE '%咸宁%' THEN '湖北'
+        WHEN court_name LIKE '%随州%' THEN '湖北'
+        WHEN court_name LIKE '%恩施%' THEN '湖北'
+        WHEN court_name LIKE '%仙桃%' THEN '湖北'
+        WHEN court_name LIKE '%潜江%' THEN '湖北'
+        WHEN court_name LIKE '%天门%' THEN '湖北'
+        WHEN court_name LIKE '%神农架%' THEN '湖北'
+
+        -- 湖南省
+        WHEN court_name LIKE '%长沙%' THEN '湖南'
+        WHEN court_name LIKE '%株洲%' THEN '湖南'
+        WHEN court_name LIKE '%湘潭%' THEN '湖南'
+        WHEN court_name LIKE '%衡阳%' THEN '湖南'
+        WHEN court_name LIKE '%邵阳%' THEN '湖南'
+        WHEN court_name LIKE '%岳阳%' THEN '湖南'
+        WHEN court_name LIKE '%常德%' THEN '湖南'
+        WHEN court_name LIKE '%张家界%' THEN '湖南'
+        WHEN court_name LIKE '%益阳%' THEN '湖南'
+        WHEN court_name LIKE '%郴州%' THEN '湖南'
+        WHEN court_name LIKE '%永州%' THEN '湖南'
+        WHEN court_name LIKE '%怀化%' THEN '湖南'
+        WHEN court_name LIKE '%娄底%' THEN '湖南'
+        WHEN court_name LIKE '%湘西%' THEN '湖南'
+
+        -- 吉林省
+        WHEN court_name LIKE '%长春%' THEN '吉林'
+        WHEN court_name LIKE '%吉林市%' THEN '吉林'
+        WHEN court_name LIKE '%四平%' THEN '吉林'
+        WHEN court_name LIKE '%辽源%' THEN '吉林'
+        WHEN court_name LIKE '%通化%' THEN '吉林'
+        WHEN court_name LIKE '%白山%' THEN '吉林'
+        WHEN court_name LIKE '%松原%' THEN '吉林'
+        WHEN court_name LIKE '%白城%' THEN '吉林'
+        WHEN court_name LIKE '%延边%' THEN '吉林'
+
+        -- 江苏省
+        WHEN court_name LIKE '%南京%' THEN '江苏'
+        WHEN court_name LIKE '%无锡%' THEN '江苏'
+        WHEN court_name LIKE '%徐州%' THEN '江苏'
+        WHEN court_name LIKE '%常州%' THEN '江苏'
+        WHEN court_name LIKE '%苏州%' THEN '江苏'
+        WHEN court_name LIKE '%南通%' THEN '江苏'
+        WHEN court_name LIKE '%连云港%' THEN '江苏'
+        WHEN court_name LIKE '%淮安%' THEN '江苏'
+        WHEN court_name LIKE '%盐城%' THEN '江苏'
+        WHEN court_name LIKE '%扬州%' THEN '江苏'
+        WHEN court_name LIKE '%镇江%' THEN '江苏'
+        WHEN court_name LIKE '%泰州%' THEN '江苏'
+        WHEN court_name LIKE '%宿迁%' THEN '江苏'
+
+        -- 江西省
+        WHEN court_name LIKE '%南昌%' THEN '江西'
+        WHEN court_name LIKE '%景德镇%' THEN '江西'
+        WHEN court_name LIKE '%萍乡%' THEN '江西'
+        WHEN court_name LIKE '%九江%' THEN '江西'
+        WHEN court_name LIKE '%新余%' THEN '江西'
+        WHEN court_name LIKE '%鹰潭%' THEN '江西'
+        WHEN court_name LIKE '%赣州%' THEN '江西'
+        WHEN court_name LIKE '%吉安%' THEN '江西'
+        WHEN court_name LIKE '%宜春%' THEN '江西'
+        WHEN court_name LIKE '%抚州%' THEN '江西'
+        WHEN court_name LIKE '%上饶%' THEN '江西'
+
+        -- 辽宁省
+        WHEN court_name LIKE '%沈阳%' THEN '辽宁'
+        WHEN court_name LIKE '%大连%' THEN '辽宁'
+        WHEN court_name LIKE '%鞍山%' THEN '辽宁'
+        WHEN court_name LIKE '%抚顺%' THEN '辽宁'
+        WHEN court_name LIKE '%本溪%' THEN '辽宁'
+        WHEN court_name LIKE '%丹东%' THEN '辽宁'
+        WHEN court_name LIKE '%锦州%' THEN '辽宁'
+        WHEN court_name LIKE '%营口%' THEN '辽宁'
+        WHEN court_name LIKE '%阜新%' THEN '辽宁'
+        WHEN court_name LIKE '%辽阳%' THEN '辽宁'
+        WHEN court_name LIKE '%盘锦%' THEN '辽宁'
+        WHEN court_name LIKE '%铁岭%' THEN '辽宁'
+        WHEN court_name LIKE '%朝阳%' THEN '辽宁'
+        WHEN court_name LIKE '%葫芦岛%' THEN '辽宁'
+
+        -- 内蒙古自治区
+        WHEN court_name LIKE '%呼和浩特%' THEN '内蒙古'
+        WHEN court_name LIKE '%包头%' THEN '内蒙古'
+        WHEN court_name LIKE '%乌海%' THEN '内蒙古'
+        WHEN court_name LIKE '%赤峰%' THEN '内蒙古'
+        WHEN court_name LIKE '%通辽%' THEN '内蒙古'
+        WHEN court_name LIKE '%鄂尔多斯%' THEN '内蒙古'
+        WHEN court_name LIKE '%呼伦贝尔%' THEN '内蒙古'
+        WHEN court_name LIKE '%巴彦淖尔%' THEN '内蒙古'
+        WHEN court_name LIKE '%乌兰察布%' THEN '内蒙古'
+        WHEN court_name LIKE '%兴安%' THEN '内蒙古'
+        WHEN court_name LIKE '%锡林郭勒%' THEN '内蒙古'
+        WHEN court_name LIKE '%阿拉善%' THEN '内蒙古'
+
+        -- 宁夏回族自治区
+        WHEN court_name LIKE '%银川%' THEN '宁夏'
+        WHEN court_name LIKE '%石嘴山%' THEN '宁夏'
+        WHEN court_name LIKE '%吴忠%' THEN '宁夏'
+        WHEN court_name LIKE '%固原%' THEN '宁夏'
+        WHEN court_name LIKE '%中卫%' THEN '宁夏'
+
+        -- 青海省
+        WHEN court_name LIKE '%西宁%' THEN '青海'
+        WHEN court_name LIKE '%海东%' THEN '青海'
+        WHEN court_name LIKE '%海北%' THEN '青海'
+        WHEN court_name LIKE '%黄南%' THEN '青海'
+        WHEN court_name LIKE '%海南州%' THEN '青海'
+        WHEN court_name LIKE '%果洛%' THEN '青海'
+        WHEN court_name LIKE '%玉树%' THEN '青海'
+        WHEN court_name LIKE '%海西%' THEN '青海'
+
+        -- 山东省
+        WHEN court_name LIKE '%济南%' THEN '山东'
+        WHEN court_name LIKE '%青岛%' THEN '山东'
+        WHEN court_name LIKE '%淄博%' THEN '山东'
+        WHEN court_name LIKE '%枣庄%' THEN '山东'
+        WHEN court_name LIKE '%东营%' THEN '山东'
+        WHEN court_name LIKE '%烟台%' THEN '山东'
+        WHEN court_name LIKE '%潍坊%' THEN '山东'
+        WHEN court_name LIKE '%济宁%' THEN '山东'
+        WHEN court_name LIKE '%泰安%' THEN '山东'
+        WHEN court_name LIKE '%威海%' THEN '山东'
+        WHEN court_name LIKE '%日照%' THEN '山东'
+        WHEN court_name LIKE '%临沂%' THEN '山东'
+        WHEN court_name LIKE '%德州%' THEN '山东'
+        WHEN court_name LIKE '%聊城%' THEN '山东'
+        WHEN court_name LIKE '%滨州%' THEN '山东'
+        WHEN court_name LIKE '%菏泽%' THEN '山东'
+
+        -- 山西省
+        WHEN court_name LIKE '%太原%' THEN '山西'
+        WHEN court_name LIKE '%大同%' THEN '山西'
+        WHEN court_name LIKE '%阳泉%' THEN '山西'
+        WHEN court_name LIKE '%长治%' THEN '山西'
+        WHEN court_name LIKE '%晋城%' THEN '山西'
+        WHEN court_name LIKE '%朔州%' THEN '山西'
+        WHEN court_name LIKE '%晋中%' THEN '山西'
+        WHEN court_name LIKE '%运城%' THEN '山西'
+        WHEN court_name LIKE '%忻州%' THEN '山西'
+        WHEN court_name LIKE '%临汾%' THEN '山西'
+        WHEN court_name LIKE '%吕梁%' THEN '山西'
+
+        -- 陕西省
+        WHEN court_name LIKE '%西安%' THEN '陕西'
+        WHEN court_name LIKE '%铜川%' THEN '陕西'
+        WHEN court_name LIKE '%宝鸡%' THEN '陕西'
+        WHEN court_name LIKE '%咸阳%' THEN '陕西'
+        WHEN court_name LIKE '%渭南%' THEN '陕西'
+        WHEN court_name LIKE '%延安%' THEN '陕西'
+        WHEN court_name LIKE '%汉中%' THEN '陕西'
+        WHEN court_name LIKE '%榆林%' THEN '陕西'
+        WHEN court_name LIKE '%安康%' THEN '陕西'
+        WHEN court_name LIKE '%商洛%' THEN '陕西'
+
+        -- 四川省
+        WHEN court_name LIKE '%成都%' THEN '四川'
+        WHEN court_name LIKE '%自贡%' THEN '四川'
+        WHEN court_name LIKE '%攀枝花%' THEN '四川'
+        WHEN court_name LIKE '%泸州%' THEN '四川'
+        WHEN court_name LIKE '%德阳%' THEN '四川'
+        WHEN court_name LIKE '%绵阳%' THEN '四川'
+        WHEN court_name LIKE '%广元%' THEN '四川'
+        WHEN court_name LIKE '%遂宁%' THEN '四川'
+        WHEN court_name LIKE '%内江%' THEN '四川'
+        WHEN court_name LIKE '%乐山%' THEN '四川'
+        WHEN court_name LIKE '%南充%' THEN '四川'
+        WHEN court_name LIKE '%眉山%' THEN '四川'
+        WHEN court_name LIKE '%宜宾%' THEN '四川'
+        WHEN court_name LIKE '%广安%' THEN '四川'
+        WHEN court_name LIKE '%达州%' THEN '四川'
+        WHEN court_name LIKE '%雅安%' THEN '四川'
+        WHEN court_name LIKE '%巴中%' THEN '四川'
+        WHEN court_name LIKE '%资阳%' THEN '四川'
+        WHEN court_name LIKE '%阿坝%' THEN '四川'
+        WHEN court_name LIKE '%甘孜%' THEN '四川'
+        WHEN court_name LIKE '%凉山%' THEN '四川'
+
+        -- 新疆维吾尔自治区
+        WHEN court_name LIKE '%乌鲁木齐%' THEN '新疆'
+        WHEN court_name LIKE '%克拉玛依%' THEN '新疆'
+        WHEN court_name LIKE '%吐鲁番%' THEN '新疆'
+        WHEN court_name LIKE '%哈密%' THEN '新疆'
+        WHEN court_name LIKE '%昌吉%' THEN '新疆'
+        WHEN court_name LIKE '%博尔塔拉%' THEN '新疆'
+        WHEN court_name LIKE '%巴音郭楞%' THEN '新疆'
+        WHEN court_name LIKE '%阿克苏%' THEN '新疆'
+        WHEN court_name LIKE '%克孜勒苏%' THEN '新疆'
+        WHEN court_name LIKE '%喀什%' THEN '新疆'
+        WHEN court_name LIKE '%和田%' THEN '新疆'
+        WHEN court_name LIKE '%伊犁%' THEN '新疆'
+        WHEN court_name LIKE '%塔城%' THEN '新疆'
+        WHEN court_name LIKE '%阿勒泰%' THEN '新疆'
+        WHEN court_name LIKE '%石河子%' THEN '新疆'
+
+        -- 西藏自治区
+        WHEN court_name LIKE '%拉萨%' THEN '西藏'
+        WHEN court_name LIKE '%日喀则%' THEN '西藏'
+        WHEN court_name LIKE '%昌都%' THEN '西藏'
+        WHEN court_name LIKE '%林芝%' THEN '西藏'
+        WHEN court_name LIKE '%山南%' THEN '西藏'
+        WHEN court_name LIKE '%那曲%' THEN '西藏'
+        WHEN court_name LIKE '%阿里%' THEN '西藏'
+
+        -- 云南省
+        WHEN court_name LIKE '%昆明%' THEN '云南'
+        WHEN court_name LIKE '%曲靖%' THEN '云南'
+        WHEN court_name LIKE '%玉溪%' THEN '云南'
+        WHEN court_name LIKE '%保山%' THEN '云南'
+        WHEN court_name LIKE '%昭通%' THEN '云南'
+        WHEN court_name LIKE '%丽江%' THEN '云南'
+        WHEN court_name LIKE '%普洱%' THEN '云南'
+        WHEN court_name LIKE '%临沧%' THEN '云南'
+        WHEN court_name LIKE '%楚雄%' THEN '云南'
+        WHEN court_name LIKE '%红河%' THEN '云南'
+        WHEN court_name LIKE '%文山%' THEN '云南'
+        WHEN court_name LIKE '%西双版纳%' THEN '云南'
+        WHEN court_name LIKE '%大理%' THEN '云南'
+        WHEN court_name LIKE '%德宏%' THEN '云南'
+        WHEN court_name LIKE '%怒江%' THEN '云南'
+        WHEN court_name LIKE '%迪庆%' THEN '云南'
+
+        -- 浙江省
+        WHEN court_name LIKE '%杭州%' THEN '浙江'
+        WHEN court_name LIKE '%宁波%' THEN '浙江'
+        WHEN court_name LIKE '%温州%' THEN '浙江'
+        WHEN court_name LIKE '%嘉兴%' THEN '浙江'
+        WHEN court_name LIKE '%湖州%' THEN '浙江'
+        WHEN court_name LIKE '%绍兴%' THEN '浙江'
+        WHEN court_name LIKE '%金华%' THEN '浙江'
+        WHEN court_name LIKE '%衢州%' THEN '浙江'
+        WHEN court_name LIKE '%舟山%' THEN '浙江'
+        WHEN court_name LIKE '%台州%' THEN '浙江'
+        WHEN court_name LIKE '%丽水%' THEN '浙江'
+
+        -- 台湾省（若数据中有台湾法院名称）
+        WHEN court_name LIKE '%台北%' THEN '台湾'
+        WHEN court_name LIKE '%高雄%' THEN '台湾'
+        WHEN court_name LIKE '%台中%' THEN '台湾'
+        WHEN court_name LIKE '%台南%' THEN '台湾'
+        WHEN court_name LIKE '%新北%' THEN '台湾'
+        WHEN court_name LIKE '%桃园%' THEN '台湾'
+
+        -- 香港特别行政区
+        WHEN court_name LIKE '%香港%' THEN '香港'
+
+        -- 澳门特别行政区
+        WHEN court_name LIKE '%澳门%' THEN '澳门'
+
+        ELSE '其他'
+        END AS province_name,
+    COUNT(*) AS case_count,
+    CASE
+        WHEN COUNT(*) > 100 THEN '极高'
+        WHEN COUNT(*) > 50 THEN '高'
+        WHEN COUNT(*) > 10 THEN '中'
         ELSE '低'
         END AS risk_level,
-
-    -- 涉案金额汇总
-    COALESCE(SUM(cd.involved_amount), 0) AS total_amount,
-    NOW() AS update_time
-FROM cleaned_cases cc
-         JOIN cases c ON cc.case_id = c.case_id
-         LEFT JOIN case_details cd ON c.case_id = cd.case_id
-         LEFT JOIN legal_supervision ls ON c.case_id = ls.case_id
--- 过滤掉清洗后依然无法识别或者为空的数据
-WHERE cc.clean_province IS NOT NULL AND cc.clean_province != ''
-GROUP BY cc.clean_province;
+    0 AS total_amount
+FROM cases
+WHERE court_name IS NOT NULL
+GROUP BY province_name;

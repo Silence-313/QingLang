@@ -49,6 +49,7 @@ body {
 }
 
 .top-section {
+    display: flex;
     flex: 6;
     position: relative;
     border-bottom: 1px solid rgba(80, 160, 255, 0.2);
@@ -407,4 +408,189 @@ body {
 .item-desc {
     color: #8ab3d7;
     font-size: 12px;
+}
+
+.left-data-panel {
+    width: 280px; /* 固定宽度 */
+    background: rgba(5, 15, 40, 0.6);
+    border-right: 1px solid rgba(80, 160, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    gap: 15px;
+    z-index: 10;
+    /* 新增：允许内部滚动 */
+    overflow-y: auto;
+    max-height: 100%;      /* 限制高度不超过父容器 */
+    box-sizing: border-box;
+}
+
+/* 自定义滚动条样式（与整体风格一致） */
+.left-data-panel::-webkit-scrollbar {
+    width: 4px;
+}
+.left-data-panel::-webkit-scrollbar-track {
+    background: rgba(10, 25, 55, 0.2);
+    border-radius: 3px;
+}
+.left-data-panel::-webkit-scrollbar-thumb {
+    background: #2c5a8c;
+    border-radius: 3px;
+}
+.left-data-panel::-webkit-scrollbar-thumb:hover {
+    background: #5ab4ff;
+}
+
+#map-container {
+    flex: 1; /* 地图占据剩余全部空间 */
+    position: relative;
+}
+
+.side-box {
+    background: rgba(10, 25, 55, 0.4);
+    border: 1px solid rgba(60, 140, 255, 0.2);
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.side-title {
+    font-size: 14px;
+    color: #5ab4ff;
+    margin-bottom: 10px;
+    font-weight: bold;
+    border-left: 3px solid #00f2fe;
+    padding-left: 8px;
+}
+
+/* 指标卡样式 */
+.indicator-grid {
+    display: flex;
+    justify-content: space-around;
+}
+.ind-item { text-align: center; }
+.ind-label { display: block; font-size: 12px; color: #6a8caa; }
+.ind-val { font-size: 20px; color: #ffd166; font-weight: bold; font-family: 'Arial'; }
+
+/* 排行榜样式 */
+.rank-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #c8e0ff;
+    margin: 8px 0;
+}
+.rank-bar-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    width: 100%;
+    margin-top: 4px;
+    border-radius: 2px;
+}
+.rank-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #5ab4ff, #00f2fe);
+    border-radius: 2px;
+}
+
+/* 案由筛选栏 */
+.reason-filter-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    background: rgba(10, 25, 55, 0.4);
+    border-bottom: 1px solid rgba(80, 160, 255, 0.2);
+    margin-bottom: 10px;
+}
+
+.filter-label {
+    color: #6a8caa;
+    font-size: 14px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.reason-select {
+    background: rgba(20, 40, 70, 0.8);
+    border: 1px solid #00f2fe;
+    border-radius: 4px;
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 14px;
+    min-width: 200px;
+    cursor: pointer;
+    outline: none;
+}
+
+.reason-select option {
+    background: #0a1930;
+    color: #fff;
+}
+
+
+/* 外层滚动包裹层 */
+.reason-buttons-wrapper {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding-bottom: 4px; /* 给滚动条留空间 */
+}
+
+/* 自定义滚动条样式 */
+.reason-buttons-wrapper::-webkit-scrollbar {
+    height: 4px;
+}
+.reason-buttons-wrapper::-webkit-scrollbar-track {
+    background: rgba(10, 25, 55, 0.2);
+    border-radius: 2px;
+}
+.reason-buttons-wrapper::-webkit-scrollbar-thumb {
+    background: #2c5a8c;
+    border-radius: 2px;
+}
+
+/* 按钮容器（flex 布局，不换行） */
+.reason-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* 案由小方块按钮 */
+.reason-btn {
+    display: inline-block;
+    padding: 5px 12px;
+    background: rgba(20, 50, 100, 0.7);
+    border: 1px solid rgba(100, 160, 220, 0.4);
+    border-radius: 16px;
+    color: #a0c8f8;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.reason-btn:hover {
+    background: rgba(80, 160, 255, 0.3);
+    border-color: #5ab4ff;
+    color: #fff;
+}
+
+.reason-btn.active {
+    background: #00f2fe;
+    border-color: #00f2fe;
+    color: #060e1f;
+    font-weight: bold;
+}
+
+/* 全部案由按钮特殊底色（可选） */
+.reason-btn.all-btn {
+    background: rgba(15, 60, 35, 0.7);
+    border-color: rgba(100, 200, 140, 0.5);
+    color: #7de0a8;
+}
+.reason-btn.all-btn.active {
+    background: #7de0a8;
+    border-color: #7de0a8;
+    color: #0a2e18;
 }
