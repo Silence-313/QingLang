@@ -77,16 +77,65 @@ QingLang/
 └── pom.xml                  # Maven 依赖配置
 ```
 
-## 📊 Excel 数据源说明
+### 📋 Sheet 1: `cases` (案件基础信息)
 
-项目根目录下的 `qinglang_data.xlsx` 是本系统的数据基础，包含以下四个 Sheet：
+对应数据库表 `cases`。
 
-| Sheet 名称 | 对应数据库表 | 核心字段说明 |
+| 字段名 | 数据类型 | 说明 |
 | :--- | :--- | :--- |
-| **cases** | `cases` | 案件编号、案件名称、审理法院、案件类型、受理/结案日期、卷宗页数、文书类型 |
-| **parties** | `parties` | 当事人名称、国籍、类型（法人/自然人）、是否聘请外籍律师、语言能力 |
-| **details** | `case_details` | 案由、是否涉及境外证据、境外证据类型、侵权行为地、适用法律、条约优先适用、卷宗语种、裁判结果 |
-| **supervision** | `legal_supervision` | 是否存在监督点、监督领域、监督类型、监督线索描述、严重程度（高/中/低） |
+| `case_number` | 文本 | 案件编号（唯一标识），如 `(2013)民申字第1189号` |
+| `case_name` | 文本 | 案件名称 |
+| `court_name` | 文本 | 审理法院 / 检察院名称 |
+| `case_type` | 文本 | 案件类型：`民事` / `刑事` / `行政` / `公益诉讼` |
+| `acceptance_date` | 日期 | 受理日期 |
+| `closing_date` | 日期 | 结案日期 |
+| `total_pages` | 整数 | 卷宗总页数 |
+| `document_types` | 文本 | 文书类型（多个用顿号分隔） |
+
+### 👥 Sheet 2: `parties` (当事人信息)
+
+对应数据库表 `parties`，通过 `case_number` 关联案件。
+
+| 字段名 | 数据类型 | 说明 |
+| :--- | :--- | :--- |
+| `case_number` | 文本 | 关联的案件编号 |
+| `party_name` | 文本 | 当事人姓名 / 名称（多个用顿号分隔） |
+| `nationality` | 文本 | 国籍 |
+| `party_type` | 文本 | 当事人类型：`法人` / `自然人` |
+| `has_foreign_lawyer` | 布尔 | 是否聘请外籍律师 |
+| `language_ability` | 文本 | 外籍当事人语言能力 |
+| `is_foreign_invested` | 布尔 | 是否涉及外商投资企业 |
+
+### 📑 Sheet 3: `details` (案件业务详情与裁判结果)
+
+对应数据库表 `case_details`，通过 `case_number` 关联案件。
+
+| 字段名 | 数据类型 | 说明 |
+| :--- | :--- | :--- |
+| `case_number` | 文本 | 关联的案件编号 |
+| `case_reason` | 文本 | 涉外案由 |
+| `has_overseas_evidence` | 布尔 | 是否涉及境外证据 |
+| `overseas_evidence_type` | 文本 | 境外证据类型 |
+| `infringement_location` | 文本 | 侵权行为发生地 |
+| `damage_location` | 文本 | 损害结果发生地 |
+| `applicable_law` | 文本 | 适用法律 / 条约 |
+| `treaty_priority` | 布尔 | 是否主张条约优先适用 |
+| `foreign_related_pages` | 整数 | 涉外相关页数 |
+| `archive_language` | 文本 | 卷宗语种 |
+| `judgment_result` | 文本 | 裁判结果 / 判决主文 |
+
+### ⚖️ Sheet 4: `supervision` (法律监督信息)
+
+对应数据库表 `legal_supervision`，通过 `case_number` 关联案件。
+
+| 字段名 | 数据类型 | 说明 |
+| :--- | :--- | :--- |
+| `case_number` | 文本 | 关联的案件编号 |
+| `has_supervision_point` | 布尔 | 是否存在监督点 |
+| `supervision_field` | 文本 | 监督领域 |
+| `supervision_type` | 文本 | 监督类型 |
+| `clue_description` | 文本 | 监督线索具体描述 |
+| `severity_level` | 文本 | 监督线索严重程度：`高` / `中` / `低` |
 
 > **注意**：Excel 中的日期格式、换行符（`<br>`）、空值（`/`、`无`）等在 `data_sync.py` 中均已被妥善清洗。
 
