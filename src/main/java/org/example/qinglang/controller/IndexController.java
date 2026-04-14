@@ -24,4 +24,9 @@ public class IndexController {
     public String searchResultsPage() {
         return "search"; // 对应 templates/search.html
     }
+
+    @GetMapping("/workbench")
+    public String workbench() {
+        return "workbench"; // 对应 templates/workbench.html
+    }
 }

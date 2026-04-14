@@ -18,11 +18,19 @@
 </div>
 
 <!-- 新增：中间搜索层 -->
+<!-- 在 main.html 中找到 nav-section 部分，替换为以下内容 -->
 <div class="nav-section">
+    <!-- 左侧：工作台按钮 -->
+    <div class="nav-left">
+        <a th:href="@{/workbench}" class="workbench-nav-btn">
+            <span class="btn-icon">⚙️</span> 工作台
+        </a>
+    </div>
+
+    <!-- 右侧：搜索容器 -->
     <div class="search-container">
         <input type="text" id="caseSearchInput" placeholder="输入案件编号、当事人或法院关键词..." autocomplete="off" />
         <button type="button" onclick="performNavigationSearch()">搜索</button>
-        <!-- 搜索建议下拉列表 -->
         <div id="searchSuggestions" class="search-suggestions"></div>
     </div>
 </div>

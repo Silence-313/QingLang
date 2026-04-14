@@ -147,4 +147,8 @@ public interface CaseRepository extends JpaRepository<CaseEntity, Integer> {
             "WHERE d.caseReason = :caseReason")
     List<CaseEntity> findByCaseReason(@Param("caseReason") String caseReason);
 
+    // CaseRepository.java 中添加
+    List<CaseEntity> findByCaseNameContaining(String keyword);
+
+
 }

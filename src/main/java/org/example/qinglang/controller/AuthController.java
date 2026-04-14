@@ -1,12 +1,17 @@
 package org.example.qinglang.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.example.qinglang.entity.UserEntity;
 import org.example.qinglang.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @RestController
@@ -15,8 +20,6 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
-
-
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserEntity user) {
@@ -50,20 +53,71 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String identifier, @RequestParam String password) {
+    public ResponseEntity<Map<String, Object>> login(@RequestParam String identifier,
+                                                     @RequestParam String password,
+                                                     HttpServletRequest request) {
         // 后端非空校验
         if (!StringUtils.hasText(identifier) || !StringUtils.hasText(password)) {
-            return ResponseEntity.badRequest().body("账号或密码不能为空");
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "账号或密码不能为空");
+            return ResponseEntity.badRequest().body(error);
         }
 
         return userRepository.findByUsernameOrEmailOrPhone(identifier, identifier, identifier)
                 .map(user -> {
                     if (user.getPassword().equals(password)) {
-                        return ResponseEntity.ok("登录成功，欢迎 " + user.getUsername());
+                        // 登录成功：将 userId 存入 session
+                        HttpSession session = request.getSession();
+                        session.setAttribute("userId", user.getUserId());
+
+                        // 返回成功的响应（可附带用户基本信息）
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("message", "登录成功，欢迎 " + user.getUsername());
+                        response.put("userId", user.getUserId());
+                        response.put("username", user.getUsername());
+                        return ResponseEntity.ok(response);
                     }
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("密码错误");
+                    // 密码错误时也返回 Map
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "密码错误");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
                 })
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("用户不存在"));
+                .orElseGet(() -> {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "用户不存在");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+                });
     }
 
+    /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("/current-user")
+    public ResponseEntity<?> getCurrentUser(HttpSession session) {
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "未登录"));
+        }
+
+        return userRepository.findById(userId)
+                .map(user -> {
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("userId", user.getUserId());
+                    userInfo.put("username", user.getUsername());
+                    userInfo.put("email", user.getEmail());
+                    userInfo.put("realName", user.getRealName());
+                    userInfo.put("role", user.getRole());
+                    return ResponseEntity.ok(userInfo);
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "用户不存在")));
+    }
+
+    /**
+     * 退出登录
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpSession session) {
+        session.invalidate();
+        return ResponseEntity.ok(Map.of("message", "已退出登录"));
+    }
 }

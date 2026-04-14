@@ -87,6 +87,26 @@
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>3.5.7</version> <!-- 请根据你的 Spring Boot 版本调整 -->
         </dependency>
+
+        <!-- WebSocket 支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- Java-WebSocket 客户端（连接讯飞星火） -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+
+        <!-- Hutool 工具类（简化加密和 HTTP 操作） -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.23</version>
+        </dependency>
     </dependencies>
 
     <build>

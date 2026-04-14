@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Data
 public class ProvinceStatEntity {
 
-    @Id // 将省份名称作为主键
+    @Id
     @Column(name = "province_name")
     private String provinceName;
 
@@ -22,4 +22,8 @@ public class ProvinceStatEntity {
 
     @Column(name = "total_amount")
     private BigDecimal totalAmount;
+
+    // 新增：风险指数（可在视图中计算）
+    @Column(name = "risk_score")
+    private Double riskScore;
 }

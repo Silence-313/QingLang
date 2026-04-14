@@ -594,3 +594,58 @@ body {
     border-color: #7de0a8;
     color: #0a2e18;
 }
+
+/* 在 main.css 中找到或替换 .nav-section 相关样式 */
+.nav-section {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;  /* 左右两端对齐 */
+    padding: 0 20px;
+    background: rgba(6, 14, 31, 0.8);
+    border-bottom: 1px solid rgba(80, 160, 255, 0.15);
+    position: relative;
+    z-index: 20;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+/* 工作台导航按钮 */
+.workbench-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 16px;
+    background: rgba(20, 50, 100, 0.7);
+    border: 1px solid rgba(100, 160, 220, 0.4);
+    border-radius: 20px;
+    color: #a0c8f8;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.workbench-nav-btn:hover {
+    background: #5ab4ff;
+    border-color: #5ab4ff;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(90, 180, 255, 0.5);
+}
+
+.workbench-nav-btn .btn-icon {
+    font-size: 14px;
+}
+
+/* 搜索容器保持右对齐 */
+.search-container {
+    position: relative;
+    width: 400px;
+    display: flex;
+    gap: 8px;
+}

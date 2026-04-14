@@ -16,4 +16,9 @@ public interface PartyRepository extends JpaRepository<PartyEntity, Integer> {
             "AND p.nationality IS NOT NULL AND p.nationality != '' " +
             "GROUP BY p.nationality ORDER BY COUNT(p) DESC")
     List<Object[]> countPartiesByNationalityAndCaseIds(@Param("caseIds") List<Integer> caseIds);
+
+    // PartyRepository.java 中添加
+    List<PartyEntity> findByPartyNameContaining(String keyword);
+
+
 }
