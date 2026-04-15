@@ -1,5 +1,6 @@
 package org.example.qinglang.service;
 
+import org.example.qinglang.dto.CaseWithReasonDto;
 import org.example.qinglang.entity.*;
 import org.example.qinglang.repository.CaseDetailRepository;
 import org.example.qinglang.repository.CaseRepository;
@@ -8,10 +9,7 @@ import org.example.qinglang.repository.PartyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -179,6 +177,66 @@ public class CaseService {
         return cases.stream()
                 .filter(c -> c.getCaseType() != null)
                 .collect(Collectors.groupingBy(c -> c.getCaseType().trim()));
+    }
+
+    /**
+     * 获取右侧悬浮面板所需的统计数据：案件总数、类型占比、案由占比
+     */
+    public Map<String, Object> getPanelStats(String province) {
+        List<Integer> caseIds = getCaseIdsByProvince(province);
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalCases", caseIds.size());
+
+        // 案件类型统计（返回列表用于前端展示占比）
+        List<Object[]> typeStatsRaw = caseRepository.countCaseTypeByCaseIds(caseIds);
+        List<Map<String, Object>> typeStats = typeStatsRaw.stream()
+                .map(row -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", row[0] != null ? row[0] : "未知类型");
+                    map.put("count", row[1]);
+                    return map;
+                })
+                .collect(Collectors.toList());
+        result.put("typeStats", typeStats);
+
+        // 新增：各类型具体数量，用于按钮显示（确保四种类型都存在）
+        Map<String, Long> typeCountMap = new HashMap<>();
+        for (Object[] row : typeStatsRaw) {
+            String typeName = row[0] != null ? row[0].toString() : "未知类型";
+            typeCountMap.put(typeName, (Long) row[1]);
+        }
+        // 保证四种类型都有值，缺失的为0
+        Map<String, Long> buttonCounts = new LinkedHashMap<>();
+        buttonCounts.put("刑事", typeCountMap.getOrDefault("刑事", 0L));
+        buttonCounts.put("民事", typeCountMap.getOrDefault("民事", 0L));
+        buttonCounts.put("行政", typeCountMap.getOrDefault("行政", 0L));
+        buttonCounts.put("公益诉讼", typeCountMap.getOrDefault("公益诉讼", 0L));
+        result.put("typeCounts", buttonCounts);
+
+        // 案由统计（前4）
+        List<Object[]> reasonStatsRaw = caseDetailRepository.countCaseReasonByCaseIds(caseIds);
+        List<Map<String, Object>> reasonStats = reasonStatsRaw.stream()
+                .limit(4)
+                .map(row -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", row[0] != null ? row[0] : "未知案由");
+                    map.put("count", row[1]);
+                    return map;
+                })
+                .collect(Collectors.toList());
+        result.put("reasonStats", reasonStats);
+
+        return result;
+    }
+
+    public List<CaseWithReasonDto> getCasesWithReasonByType(String type) {
+        List<CaseEntity> cases = caseRepository.findByCaseTypeWithDetails(type);
+        return cases.stream().map(c -> {
+            CaseDetailEntity detail = caseDetailRepository.findByCaseId(c.getCaseId()).orElse(null);
+            String reason = detail != null ? detail.getCaseReason() : "未知案由";
+            String judgment = detail != null ? detail.getJudgmentResults() : "";   // 新增获取判决结果
+            return CaseWithReasonDto.fromEntity(c, reason, judgment);
+        }).collect(Collectors.toList());
     }
 
 }

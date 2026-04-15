@@ -1,5 +1,6 @@
 package org.example.qinglang.controller;
 
+import org.example.qinglang.dto.CaseWithReasonDto;
 import org.example.qinglang.entity.CaseEntity;
 import org.example.qinglang.entity.CaseEsEntity; // 导入 ES 实体
 import org.example.qinglang.repository.CaseDetailRepository;
@@ -75,6 +76,11 @@ public class CaseController {
     public Map<String, List<CaseEntity>> getCasesGroupedByTypeWithReason(
             @RequestParam(required = false) String caseReason) {
         return caseService.getCasesGroupedByType(caseReason);
+    }
+
+    @GetMapping("/by-type")
+    public List<CaseWithReasonDto> getCasesByType(@RequestParam String type) {
+        return caseService.getCasesWithReasonByType(type);
     }
 
 }

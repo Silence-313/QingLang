@@ -7,7 +7,7 @@ from sqlalchemy.types import Date, Integer, String, Text, Boolean
 import pymysql
 
 # --------------------------- 配置区域 ---------------------------
-EXCEL_PATH = "qinglang_data.xlsx"
+EXCEL_PATH = "qinglang历案data(1).xlsx"
 DB_CONFIG = {
     "host": "localhost",
     "port": 3306,
@@ -17,35 +17,29 @@ DB_CONFIG = {
     "charset": "utf8mb4"
 }
 
-# --------------------------- 辅助函数 ---------------------------
+# --------------------------- 辅助函数（保持不变） ---------------------------
 def clean_date(value):
-    """清洗日期字段，返回 date 对象或 None"""
     if pd.isna(value) or value in ("", "/", "不适用", "无"):
         return None
     if isinstance(value, datetime):
         return value.date()
     if isinstance(value, str):
         value = value.strip()
-        # 处理格式如 "2013/5/6"
         if re.match(r"\d{4}/\d{1,2}/\d{1,2}", value):
             try:
                 return datetime.strptime(value, "%Y/%m/%d").date()
             except:
                 pass
-        # 处理格式 "2021-01-01 00:00:00"
         if " " in value:
             value = value.split(" ")[0]
-        # 处理格式 "2021-01-01"
         try:
             return datetime.strptime(value, "%Y-%m-%d").date()
         except:
             pass
-        # 处理格式 "2021/5/6"
         try:
             return datetime.strptime(value, "%Y/%m/%d").date()
         except:
             pass
-        # 处理带有文字描述的日期，例如 "二审结案：2022/9/5（一审：2022/3/24）"
         match = re.search(r"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", value)
         if match:
             ds = match.group(1).replace("/", "-")
@@ -56,7 +50,6 @@ def clean_date(value):
     return None
 
 def clean_bool(value):
-    """清洗布尔字段"""
     if isinstance(value, bool):
         return value
     if pd.isna(value):
@@ -69,7 +62,6 @@ def clean_bool(value):
     return False
 
 def clean_string(value):
-    """清洗字符串字段，去除首尾空白、换行符"""
     if pd.isna(value):
         return None
     if isinstance(value, str):
@@ -80,7 +72,6 @@ def clean_string(value):
     return str(value).strip()
 
 def clean_int(value):
-    """清洗整数字段"""
     if pd.isna(value):
         return None
     try:
@@ -89,32 +80,38 @@ def clean_int(value):
         return None
 
 def clean_case_type(value):
-    """
-    清洗并标准化案件类型字段。
-    优先级：公益诉讼 > 行政 = 刑事 = 民事
-    最终输出仅限：'公益诉讼', '行政', '刑事', '民事'
-    """
     if pd.isna(value):
         return None
     if not isinstance(value, str):
         value = str(value)
-
     val = value.strip()
-
-    # 1. 优先匹配“公益诉讼”
     if "公益诉讼" in val:
         return "公益诉讼"
-
-    # 2. 匹配其他三种类型（可处理类似“民事公益诉讼”但未含“公益诉讼”字样或已处理的情况）
     if "行政" in val:
         return "行政"
     if "刑事" in val:
         return "刑事"
     if "民事" in val:
         return "民事"
-
-    # 3. 若无匹配，返回 None（或根据需要设定默认值，如"民事"）
     return None
+
+# --------------------------- 清空表函数 ---------------------------
+def clear_tables(engine):
+    """按外键依赖顺序清空所有表的数据"""
+    with engine.connect() as conn:
+        # 禁用外键检查（仅当前会话）
+        conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+        # 先清空子表
+        conn.execute(text("TRUNCATE TABLE legal_supervision"))
+        conn.execute(text("TRUNCATE TABLE case_details"))
+        conn.execute(text("TRUNCATE TABLE parties"))
+        # 最后清空主表
+        conn.execute(text("TRUNCATE TABLE cases"))
+        # 重新启用外键检查
+        conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+        conn.commit()
+    print("已清空所有表数据，准备重新导入。")
+
 # --------------------------- 主程序 ---------------------------
 def main():
     # 读取 Excel 所有 sheet
@@ -129,6 +126,9 @@ def main():
         f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?charset={DB_CONFIG['charset']}"
     )
 
+    # 清空现有数据，避免重复键冲突
+    clear_tables(engine)
+
     # ---------- 1. 清洗 cases 表数据 ----------
     print("清洗 cases 表...")
     df_cases = pd.DataFrame()
@@ -141,7 +141,7 @@ def main():
     df_cases["total_pages"] = df_cases_raw["total_pages"].apply(clean_int)
     df_cases["document_types"] = df_cases_raw["document_types"].apply(clean_string)
 
-    # 去重，保留第一条（根据 case_number 唯一约束）
+    # 去重，保留第一条
     df_cases = df_cases.drop_duplicates(subset=["case_number"]).reset_index(drop=True)
     df_cases = df_cases.where(pd.notnull(df_cases), None)
 
@@ -170,13 +170,11 @@ def main():
     df_parties["language_ability"] = df_parties_raw["language_ability"].apply(clean_string)
     df_parties["is_foreign_invested"] = df_parties_raw["is_foreign_invested"].apply(clean_bool)
 
-    # 映射 case_id
     df_parties["case_id"] = df_parties["case_number"].map(case_map)
     df_parties = df_parties.dropna(subset=["case_id"])
     df_parties = df_parties.drop(columns=["case_number"])
     df_parties = df_parties.where(pd.notnull(df_parties), None)
 
-    # 写入 parties 表
     print("写入 parties 表...")
     df_parties.to_sql("parties", con=engine, if_exists="append", index=False)
 
@@ -185,7 +183,7 @@ def main():
     df_details = pd.DataFrame()
     df_details["case_number"] = df_details_raw["case_number"].apply(clean_string)
     df_details["case_reason"] = df_details_raw["case_reason"].apply(clean_string)
-    df_details["judgment_results"] = df_details_raw["judgment_result"].apply(clean_string)
+    # 修正列名：Excel 中是 judgment_results (复数)
     df_details["has_overseas_evidence"] = df_details_raw["has_overseas_evidence"].apply(clean_bool)
     df_details["overseas_evidence_type"] = df_details_raw["overseas_evidence_type"].apply(clean_string)
     df_details["infringement_location"] = df_details_raw["infringement_location"].apply(clean_string)
@@ -193,6 +191,7 @@ def main():
     df_details["applicable_law"] = df_details_raw["applicable_law"].apply(clean_string)
     df_details["treaty_priority"] = df_details_raw["treaty_priority"].apply(clean_bool)
     df_details["foreign_related_pages"] = df_details_raw["foreign_related_pages"].apply(clean_int)
+    df_details["judgment_results"] = df_cases_raw["judgment_results"].apply(clean_string)  # 新增
     df_details["archive_language"] = df_details_raw["archive_language"].apply(clean_string)
 
     df_details["case_id"] = df_details["case_number"].map(case_map)
@@ -200,7 +199,6 @@ def main():
     df_details = df_details.drop(columns=["case_number"])
     df_details = df_details.where(pd.notnull(df_details), None)
 
-    # 写入 case_details 表
     print("写入 case_details 表...")
     df_details.to_sql("case_details", con=engine, if_exists="append", index=False,
                       dtype={
@@ -222,7 +220,6 @@ def main():
     df_supervision = df_supervision.drop(columns=["case_number"])
     df_supervision = df_supervision.where(pd.notnull(df_supervision), None)
 
-    # 写入 legal_supervision 表
     print("写入 legal_supervision 表...")
     df_supervision.to_sql("legal_supervision", con=engine, if_exists="append", index=False)
 

@@ -150,5 +150,10 @@ public interface CaseRepository extends JpaRepository<CaseEntity, Integer> {
     // CaseRepository.java 中添加
     List<CaseEntity> findByCaseNameContaining(String keyword);
 
+    @Query("SELECT c.caseType, COUNT(c) FROM CaseEntity c WHERE c.caseId IN :caseIds GROUP BY c.caseType")
+    List<Object[]> countCaseTypeByCaseIds(@Param("caseIds") List<Integer> caseIds);
+
+    @Query("SELECT c FROM CaseEntity c LEFT JOIN FETCH c.parties WHERE c.caseType = :type")
+    List<CaseEntity> findByCaseTypeWithDetails(@Param("type") String type);
 
 }

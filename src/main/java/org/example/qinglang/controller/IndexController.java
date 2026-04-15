@@ -29,4 +29,9 @@ public class IndexController {
     public String workbench() {
         return "workbench"; // 对应 templates/workbench.html
     }
+
+    @GetMapping("/analysis")
+    public String analysis() {
+        return "analysis"; // 对应 templates/workbench.html
+    }
 }

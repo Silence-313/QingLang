@@ -19,4 +19,8 @@ public interface CaseDetailRepository extends JpaRepository<CaseDetailEntity, In
 
     @Query("SELECT d.applicableLaw FROM CaseDetailEntity d WHERE d.caseId IN :caseIds AND d.applicableLaw IS NOT NULL AND d.applicableLaw != ''")
     List<String> findApplicableLawsByCaseIds(@Param("caseIds") List<Integer> caseIds);
+
+    @Query("SELECT d.caseReason, COUNT(d) FROM CaseDetailEntity d WHERE d.caseId IN :caseIds GROUP BY d.caseReason ORDER BY COUNT(d) DESC")
+    List<Object[]> countCaseReasonByCaseIds(@Param("caseIds") List<Integer> caseIds);
+
 }

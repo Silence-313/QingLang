@@ -8,26 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
-    <!-- 独立样式文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 样式文件 -->
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <!-- 引入 workbench 样式用于右侧助手 -->
+    <link rel="stylesheet" th:href="@{/css/workbench.css}">
 </head>
 <body>
-<!-- 顶部标题栏：保持纯粹 -->
 <div id="header">
     <h1><em>青朗法治</em> · 涉外案件区域分布</h1>
 </div>
 
-<!-- 新增：中间搜索层 -->
-<!-- 在 main.html 中找到 nav-section 部分，替换为以下内容 -->
 <div class="nav-section">
-    <!-- 左侧：工作台按钮 -->
     <div class="nav-left">
         <a th:href="@{/workbench}" class="workbench-nav-btn">
             <span class="btn-icon">⚙️</span> 工作台
         </a>
     </div>
-
-    <!-- 右侧：搜索容器 -->
     <div class="search-container">
         <input type="text" id="caseSearchInput" placeholder="输入案件编号、当事人或法院关键词..." autocomplete="off" />
         <button type="button" onclick="performNavigationSearch()">搜索</button>
@@ -35,84 +32,105 @@
     </div>
 </div>
 
+<div class="case-type-bar">
+    <button class="case-type-btn" data-type="刑事">⚖️ 刑事案件</button>
+    <button class="case-type-btn" data-type="民事">📄 民事案件</button>
+    <button class="case-type-btn" data-type="行政">🏛️ 行政案件</button>
+    <button class="case-type-btn" data-type="公益诉讼">🌿 公益诉讼</button>
+</div>
+
 <div class="page-wrapper">
-    <!-- 上部区域：3D地图容器 -->
-    <div class="top-section">
-        <div class="left-data-panel">
-            <div class="side-box">
-                <div class="side-title">核心业务指标</div>
-                <div class="indicator-grid">
-                    <div class="ind-item">
-                        <span class="ind-label">年度案件总数</span>
-                        <span class="ind-val" id="total-case-count">0</span>
+    <!-- 主体区域：左侧地图 + 右侧助手 -->
+    <div class="main-split-layout">
+        <!-- 左侧：地图及左侧数据面板 -->
+        <div class="map-area">
+            <div class="left-data-panel">
+                <div class="side-box">
+                    <div class="side-title">核心业务指标</div>
+                    <div class="indicator-grid">
+                        <div class="ind-item">
+                            <span class="ind-label">年度案件总数</span>
+                            <span class="ind-val" id="total-case-count">0</span>
+                        </div>
+                        <div class="ind-item">
+                            <span class="ind-label">卷宗总页数</span>
+                            <span class="ind-val" id="total-page-count">0</span>
+                        </div>
                     </div>
-                    <div class="ind-item">
-                        <span class="ind-label">卷宗总页数</span>
-                        <span class="ind-val" id="total-page-count">0</span>
+                </div>
+                <div class="side-box">
+                    <div class="side-title">适用法律/条约占比</div>
+                    <div id="law-distribution-chart" style="width: 100%; height: 180px;"></div>
+                </div>
+                <div class="side-box">
+                    <div class="side-title">当事国籍 Top 5</div>
+                    <div id="country-rank-list" class="rank-list"></div>
+                </div>
+            </div>
+            <div id="map-container">
+                <div id="map"></div>
+                <div class="info-panel">
+                    <!-- 地区名称 -->
+                    <div class="panel-name" id="pName">全国概览</div>
+
+                    <!-- 案件总数 -->
+                    <div class="panel-section">
+                        <div class="panel-label">📊 案件总数</div>
+                        <div class="panel-value" id="pTotalCases">0</div>
+                    </div>
+
+                    <!-- 案件类型占比（四个环形图或简单列表，这里用简洁百分比条） -->
+                    <div class="panel-section">
+                        <div class="panel-label">⚖️ 案件类型占比</div>
+                        <div id="pTypeStats" class="panel-stats-list"></div>
+                    </div>
+
+                    <!-- 案由占比（前四） -->
+                    <div class="panel-section">
+                        <div class="panel-label">📌 主要案由</div>
+                        <div id="pReasonStats" class="panel-stats-list"></div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="side-box">
-                <div class="side-title">适用法律/条约占比</div>
-                <div id="law-distribution-chart" style="width: 100%; height: 180px;"></div>
-            </div>
-
-            <div class="side-box">
-                <div class="side-title">当事国籍 Top 5</div>
-                <div id="country-rank-list" class="rank-list">
+        <!-- 右侧：智能法律助手 -->
+        <div class="assistant-area">
+            <div class="workbench-card chat-card">
+                <div class="card-header">
+                    <div class="chat-header-left">
+                        <button id="toggleHistoryBtn" class="menu-btn" title="历史记录">☰</button>
+                        <span>🤖 智能法律助手</span>
+                    </div>
+                    <button id="newChatBtn" class="new-chat-btn" title="新对话">➕</button>
                 </div>
-            </div>
-        </div>
-        <div id="map-container">
-            <div id="map"></div>
-            <!-- 悬浮信息面板 -->
-            <div class="info-panel">
-                <div class="panel-name" id="pName">全国概览</div>
-                <div class="row"><span class="lbl">案件数量</span><span class="val" id="pCases">—</span></div>
-                <div class="row"><span class="lbl">涉外风险</span><span class="val" id="pLevel">—</span></div>
-                <div class="row"><span class="lbl">占全国比</span><span class="val" id="pRatio">—</span></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 下部区域：业务明细数据区 -->
-    <div class="bottom-section">
-        <!-- 案由筛选栏（横向滚动按钮） -->
-        <div class="reason-filter-bar">
-            <div class="reason-buttons-wrapper" id="reasonButtonsWrapper">
-                <div class="reason-buttons" id="reasonButtons">
-                    <!-- 动态生成的按钮会放在这里 -->
+                <div id="chatMessages" class="chat-messages">
+                    <div class="chat-message assistant">
+                        <div class="message-content markdown-body">你好！我是青朗法治智能助手，可以回答涉外案件相关的法律问题。请问有什么可以帮助你的？</div>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="case-columns-container">
-            <!-- 刑事列 -->
-            <div class="case-column">
-                <div class="column-header">刑事案件</div>
-                <div id="list-刑事" class="case-list"></div>
-            </div>
-            <!-- 民事列 -->
-            <div class="case-column">
-                <div class="column-header">民事案件</div>
-                <div id="list-民事" class="case-list"></div>
-            </div>
-            <!-- 行政列 -->
-            <div class="case-column">
-                <div class="column-header">行政案件</div>
-                <div id="list-行政" class="case-list"></div>
-            </div>
-            <!-- 公益诉讼列 -->
-            <div class="case-column">
-                <div class="column-header">公益诉讼</div>
-                <div id="list-公益诉讼" class="case-list"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="输入法律问题..." autocomplete="off" />
+                    <button id="sendChatBtn">发送</button>
+                </div>
+                <div id="chatStatus" class="chat-status">● 离线</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 独立脚本文件 -->
+<!-- 历史记录侧边栏 -->
+<div id="historySidebar" class="history-sidebar">
+    <div class="sidebar-header">
+        <span>📜 对话历史</span>
+        <button id="closeHistoryBtn" class="close-btn">&times;</button>
+    </div>
+    <div class="sidebar-content" id="historyList">
+        <div class="loading-placeholder">加载中...</div>
+    </div>
+</div>
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
 <script th:src="@{/js/main.js}"></script>
 </body>
 </html>

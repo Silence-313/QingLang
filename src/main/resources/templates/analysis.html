@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件分析 · 青朗法治</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/analysis.css}">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+</head>
+<body>
+<div id="header">
+  <div class="back-btn-container">
+    <button id="backToMainBtn" class="back-btn">← 返回指挥中心</button>
+  </div>
+  <h1 style="cursor:pointer; flex: 1; text-align: center;" onclick="location.href='/'">
+    <em>青朗法治</em> · 案件深度分析
+  </h1>
+</div>
+
+<div class="analysis-container">
+  <!-- 左侧 50% -->
+  <div class="left-panel">
+    <div class="chart-card">
+      <div class="card-header">📊 案由分布</div>
+      <div id="reasonPieChart" class="chart-container"></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-header">📈 年度趋势</div>
+      <div id="yearLineChart" class="chart-container"></div>
+    </div>
+  </div>
+
+  <!-- 中间 25% -->
+  <div class="mid-panel">
+    <div class="chart-card">
+      <div class="card-header">🔍 案由特征分析</div>
+      <div id="dynamicChart" class="chart-container">
+        <div class="placeholder">请选择案由</div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="card-header">📋 案件详情</div>
+      <div id="caseDetailContainer" class="detail-container">
+        <div class="placeholder">← 点击右侧案件查看详情</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧 25% -->
+  <div class="right-panel">
+    <div class="list-card">
+      <div class="card-header">
+        <span>📂 案件列表</span>
+        <span id="caseCountBadge" class="badge">0</span>
+      </div>
+      <div id="caseListContainer" class="case-list">
+        <div class="loading-placeholder">加载中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/analysis.js}"></script>
+</body>
+</html>
