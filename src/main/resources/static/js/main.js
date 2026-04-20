@@ -170,6 +170,359 @@
         });
     }
 
+    // ---------- 地区对比弹窗逻辑 ----------
+    let comparisonCharts = {};
+
+    async function initComparisonModal() {
+        const provinceASelect = document.getElementById('provinceASelect');
+        const provinceBSelect = document.getElementById('provinceBSelect');
+        const compareBtn = document.getElementById('compareBtn');
+
+        // 加载可用省份列表
+        try {
+            const res = await fetch('/api/comparison/available-provinces');
+            const provinces = await res.json();
+            populateProvinceSelect(provinceASelect, provinces);
+            populateProvinceSelect(provinceBSelect, provinces);
+        } catch (err) {
+            console.error('加载省份列表失败', err);
+        }
+
+        compareBtn.addEventListener('click', performComparison);
+
+        document.getElementById('applyFilterBtn').addEventListener('click', applyFilter);
+        document.getElementById('resetFilterBtn').addEventListener('click', resetFilter);
+        document.getElementById('backToChartBtn').addEventListener('click', showChartView);
+    }
+
+    function populateProvinceSelect(selectEl, provinces) {
+        selectEl.innerHTML = '<option value="">-- 请选择 --</option>';
+        provinces.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p;
+            option.textContent = p;
+            selectEl.appendChild(option);
+        });
+    }
+
+    async function performComparison() {
+        const provinceA = document.getElementById('provinceASelect').value;
+        const provinceB = document.getElementById('provinceBSelect').value;
+
+        if (!provinceA || !provinceB) {
+            alert('请选择两个地区');
+            return;
+        }
+        if (provinceA === provinceB) {
+            alert('请选择不同的地区进行对比');
+            return;
+        }
+
+        // 显示加载状态
+        document.getElementById('comparisonResult').style.display = 'block';
+        // 可添加 loading 效果
+
+        try {
+            const res = await fetch(`/api/comparison/provinces?provinceA=${provinceA}&provinceB=${provinceB}`);
+            const data = await res.json();
+
+            renderComparison(data.provinceA, data.provinceB);
+
+            // 加载年份下拉框选项（基于两个地区的数据）
+            await loadYearOptions(provinceA, provinceB);
+
+            // 显示筛选栏和图表区域，隐藏列表
+            document.getElementById('filterBar').style.display = 'flex';
+            document.getElementById('comparisonResult').style.display = 'block';
+            document.getElementById('caseListContainer').style.display = 'none';
+        } catch (err) {
+            console.error('对比失败', err);
+            alert('数据加载失败');
+        }
+
+
+    }
+
+    // 加载年份选项
+    async function loadYearOptions(provinceA, provinceB) {
+        try {
+            // 直接使用一次请求获取两个省份的数据（复用已有的数据）
+            const res = await fetch(`/api/comparison/provinces?provinceA=${provinceA}&provinceB=${provinceB}`);
+            const data = await res.json();
+            const years = new Set();
+
+            const yearlyA = data.provinceA?.yearlyCases || {};
+            const yearlyB = data.provinceB?.yearlyCases || {};
+
+            Object.keys(yearlyA).forEach(y => years.add(y));
+            Object.keys(yearlyB).forEach(y => years.add(y));
+
+            const sortedYears = Array.from(years).filter(y => !isNaN(y)).sort();
+            const select = document.getElementById('yearFilter');
+            select.innerHTML = '<option value="">全部年份</option>';
+            sortedYears.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            console.error('加载年份失败', e);
+        }
+    }
+
+// 应用筛选
+    async function applyFilter() {
+        const provinceA = document.getElementById('provinceASelect').value;
+        const provinceB = document.getElementById('provinceBSelect').value;
+        const year = document.getElementById('yearFilter').value;
+        const caseType = document.getElementById('typeFilter').value;
+
+        if (!provinceA || !provinceB) return;
+
+        try {
+            const url = `/api/comparison/cases?provinceA=${provinceA}&provinceB=${provinceB}&year=${year}&caseType=${caseType}`;
+            const res = await fetch(url);
+            const cases = await res.json();
+            renderCaseList(cases);
+
+            // 切换到列表视图
+            document.getElementById('comparisonResult').style.display = 'none';
+            document.getElementById('caseListContainer').style.display = 'block';
+        } catch (err) {
+            console.error('筛选失败', err);
+        }
+    }
+
+// 重置筛选
+    function resetFilter() {
+        document.getElementById('yearFilter').value = '';
+        document.getElementById('typeFilter').value = '';
+        // 恢复图表视图
+        showChartView();
+    }
+
+// 显示图表视图
+    function showChartView() {
+        document.getElementById('comparisonResult').style.display = 'block';
+        document.getElementById('caseListContainer').style.display = 'none';
+    }
+
+// 渲染案件列表
+    function renderCaseList(cases) {
+        const container = document.getElementById('caseListContent');
+        if (!cases || cases.length === 0) {
+            container.innerHTML = '<div class="empty-placeholder">暂无符合条件的案件</div>';
+            return;
+        }
+        container.innerHTML = cases.map(c => `
+        <div class="list-case-item" onclick="window.location.href='/case/detail?id=${c.caseId}'">
+            <div class="list-case-title">${escapeHtml(c.caseName)}</div>
+            <div class="list-case-meta">
+                <span>${escapeHtml(c.caseNumber)}</span>
+                <span>${escapeHtml(c.caseType || '未分类')}</span>
+                <span>${c.acceptanceDate || '日期未知'}</span>
+                <span>${escapeHtml(c.caseReason || '')}</span>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    function renderComparison(dataA, dataB) {
+        // 更新卡片 KPI
+        document.getElementById('provinceAName').textContent = dataA.name;
+        document.getElementById('provinceBName').textContent = dataB.name;
+        document.getElementById('aTotalCases').textContent = dataA.totalCases;
+        document.getElementById('aTotalPages').textContent = dataA.totalPages;
+        document.getElementById('aSupervision').textContent = dataA.supervisionCount;
+        document.getElementById('aRiskScore').textContent = dataA.avgRiskScore.toFixed(1);
+        document.getElementById('bTotalCases').textContent = dataB.totalCases;
+        document.getElementById('bTotalPages').textContent = dataB.totalPages;
+        document.getElementById('bSupervision').textContent = dataB.supervisionCount;
+        document.getElementById('bRiskScore').textContent = dataB.avgRiskScore.toFixed(1);
+
+        // 渲染图表
+        renderTypeChart(dataA, dataB);
+        renderReasonChart(dataA, dataB);
+        renderNationalityChart(dataA, dataB);
+        renderLawChart(dataA, dataB);
+    }
+
+    function renderTypeChart(dataA, dataB) {
+        const dom = document.getElementById('typeChart');
+        if (comparisonCharts.typeChart) comparisonCharts.typeChart.dispose();
+        const chart = echarts.init(dom);
+        comparisonCharts.typeChart = chart;
+
+        const types = ['刑事', '民事', '行政', '公益诉讼'];
+        const seriesA = types.map(t => dataA.typeDistribution[t] || 0);
+        const seriesB = types.map(t => dataB.typeDistribution[t] || 0);
+
+        chart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: [dataA.name, dataB.name], textStyle: { color: '#a0c8f8' } },
+            xAxis: { type: 'category', data: types, axisLabel: { color: '#a0c8f8' } },
+            yAxis: { type: 'value', axisLabel: { color: '#a0c8f8' } },
+            series: [
+                { name: dataA.name, type: 'bar', data: seriesA, itemStyle: { color: '#5ab4ff' } },
+                { name: dataB.name, type: 'bar', data: seriesB, itemStyle: { color: '#ffd166' } }
+            ],
+            grid: { containLabel: true, top: 30, bottom: 20 }
+        });
+    }
+
+    function renderReasonChart(dataA, dataB) {
+        const dom = document.getElementById('reasonChart');
+        if (comparisonCharts.reasonChart) comparisonCharts.reasonChart.dispose();
+        const chart = echarts.init(dom);
+        comparisonCharts.reasonChart = chart;
+
+        const reasonsA = dataA.topReasons || [];
+        const reasonsB = dataB.topReasons || [];
+
+        const pieDataA = reasonsA.map(r => ({ name: r.name, value: r.count }));
+        const pieDataB = reasonsB.map(r => ({ name: r.name, value: r.count }));
+
+        if (pieDataA.length === 0 && pieDataB.length === 0) {
+            chart.setOption({
+                title: { text: '暂无案由数据', textStyle: { color: '#a0c8f8' }, left: 'center', top: 'center' }
+            });
+            return;
+        }
+
+        chart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+            // 关键修改：图例隐藏
+            legend: { show: false },
+            series: [
+                {
+                    name: dataA.name,
+                    type: 'pie',
+                    radius: ['20%', '45%'],
+                    center: ['25%', '55%'],
+                    label: { show: false },  // 也可关闭标签，仅靠悬浮
+                    emphasis: { scale: true },
+                    data: pieDataA,
+                    itemStyle: { borderRadius: 6, borderColor: '#060e1f', borderWidth: 1 }
+                },
+                {
+                    name: dataB.name,
+                    type: 'pie',
+                    radius: ['20%', '45%'],
+                    center: ['75%', '55%'],
+                    label: { show: false },
+                    emphasis: { scale: true },
+                    data: pieDataB,
+                    itemStyle: { borderRadius: 6, borderColor: '#060e1f', borderWidth: 1 }
+                }
+            ],
+            graphic: [
+                { type: 'text', left: '25%', top: 20, style: { text: dataA.name, fill: '#5ab4ff', fontSize: 13 } },
+                { type: 'text', left: '75%', top: 20, style: { text: dataB.name, fill: '#ffd166', fontSize: 13 } }
+            ]
+        });
+    }
+
+    function renderNationalityChart(dataA, dataB) {
+        const dom = document.getElementById('nationalityChart');
+        if (comparisonCharts.nationalityChart) comparisonCharts.nationalityChart.dispose();
+        const chart = echarts.init(dom);
+        comparisonCharts.nationalityChart = chart;
+
+        // 合并两地区国籍数据，展示对比条形图
+        const nationsA = dataA.topNationalities || [];
+        const nationsB = dataB.topNationalities || [];
+        const allNations = [...new Set([...nationsA.map(n => n.name), ...nationsB.map(n => n.name)])].slice(0, 6);
+
+        const seriesA = allNations.map(n => nationsA.find(item => item.name === n)?.count || 0);
+        const seriesB = allNations.map(n => nationsB.find(item => item.name === n)?.count || 0);
+
+        chart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: [dataA.name, dataB.name], textStyle: { color: '#a0c8f8' } },
+            xAxis: { type: 'category', data: allNations, axisLabel: { color: '#a0c8f8' } },
+            yAxis: { type: 'value', axisLabel: { color: '#a0c8f8' } },
+            series: [
+                { name: dataA.name, type: 'bar', data: seriesA, itemStyle: { color: '#5ab4ff' } },
+                { name: dataB.name, type: 'bar', data: seriesB, itemStyle: { color: '#ffd166' } }
+            ],
+            grid: { containLabel: true, top: 30 }
+        });
+    }
+
+    function renderLawChart(dataA, dataB) {
+        const dom = document.getElementById('lawChart');
+        if (comparisonCharts.lawChart) comparisonCharts.lawChart.dispose();
+        const chart = echarts.init(dom);
+        comparisonCharts.lawChart = chart;
+
+        const yearlyA = dataA.yearlyCases || {};
+        const yearlyB = dataB.yearlyCases || {};
+
+        // 收集所有年份并排序
+        const allYears = new Set([...Object.keys(yearlyA), ...Object.keys(yearlyB)]);
+        const sortedYears = Array.from(allYears).filter(y => !isNaN(y)).sort();
+
+        if (sortedYears.length === 0) {
+            chart.setOption({
+                title: { text: '暂无年度数据', textStyle: { color: '#a0c8f8' }, left: 'center', top: 'center' }
+            });
+            return;
+        }
+
+        const seriesAData = sortedYears.map(y => yearlyA[y] || 0);
+        const seriesBData = sortedYears.map(y => yearlyB[y] || 0);
+
+        chart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: [dataA.name, dataB.name], textStyle: { color: '#a0c8f8' }, top: 0 },
+            grid: { left: '10%', right: '5%', top: '20%', bottom: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: sortedYears,
+                axisLabel: { color: '#a0c8f8' },
+                axisLine: { lineStyle: { color: '#2c5a8c' } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '案件数量',
+                nameTextStyle: { color: '#a0c8f8' },
+                axisLabel: { color: '#a0c8f8' },
+                splitLine: { lineStyle: { color: '#1a2f4a', type: 'dashed' } }
+            },
+            series: [
+                {
+                    name: dataA.name,
+                    type: 'line',
+                    data: seriesAData,
+                    smooth: true,
+                    lineStyle: { color: '#5ab4ff', width: 2 },
+                    areaStyle: { color: 'rgba(90,180,255,0.2)' },
+                    symbol: 'circle',
+                    symbolSize: 6
+                },
+                {
+                    name: dataB.name,
+                    type: 'line',
+                    data: seriesBData,
+                    smooth: true,
+                    lineStyle: { color: '#ffd166', width: 2 },
+                    areaStyle: { color: 'rgba(255,209,102,0.2)' },
+                    symbol: 'diamond',
+                    symbolSize: 6
+                }
+            ]
+        });
+    }
+
+// 在 bindModalEvents 函数中增加初始化调用
+    const originalBindModalEvents = bindModalEvents;
+    bindModalEvents = function() {
+        originalBindModalEvents();
+        // 当弹窗打开时初始化下拉框（也可以提前初始化）
+        initComparisonModal();
+    };
+
     /**
      * 获取并渲染 info-panel 的详细统计数据
      * @param {string|null} province 省份简称，null 表示全国
@@ -444,6 +797,43 @@
         });
     }
 
+    // 在 main.js 的合适位置（例如 initDashboard 函数内部，或者一个独立的 bindModalEvents 函数）
+    // 定义函数（放在 initDashboard 之后或文件末尾均可）
+    function bindModalEvents() {
+        const openBtn = document.getElementById('openFullscreenModalBtn');
+        const modal = document.getElementById('fullscreenModal');
+        const closeBtn = document.getElementById('closeFullscreenModalBtn');
+
+        if (!openBtn || !modal || !closeBtn) {
+            console.warn('弹窗相关元素未找到，请检查 HTML 结构');
+            return;
+        }
+
+        openBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            resetFilter();
+            document.getElementById('filterBar').style.display = 'none';
+        });
+
+        // 点击遮罩关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // ESC 关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
     function bindCaseTypeButtons() {
         document.querySelectorAll('.case-type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -508,7 +898,7 @@
             bindChartEvents();
             injectSmallProvincePanel();
             window.addEventListener('resize', () => chart && chart.resize());
-
+            bindModalEvents();
             bindCaseTypeButtons();
             initAssistant();
         } catch (error) {

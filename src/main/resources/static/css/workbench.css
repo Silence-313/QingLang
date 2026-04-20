@@ -747,3 +747,280 @@
     color: #fff !important;
     box-shadow: 0 0 15px rgba(90, 180, 255, 0.6) !important;
 }
+
+.file-upload-area {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.file-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(20, 80, 120, 0.6);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    border-radius: 4px;
+    color: #00f2fe;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.file-upload-label:hover {
+    background: rgba(0, 242, 254, 0.15);
+    border-color: #00f2fe;
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+.edit-section {
+    border: 1px solid rgba(80, 160, 255, 0.2);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.edit-section legend {
+    color: #5ab4ff;
+    padding: 0 10px;
+    font-weight: bold;
+}
+.btn-small {
+    background: rgba(90,180,255,0.2);
+    border: 1px solid #5ab4ff;
+    color: #5ab4ff;
+    padding: 2px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+.btn-small:hover {
+    background: #5ab4ff;
+    color: #fff;
+}
+.party-edit-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+.party-edit-item input {
+    flex: 1;
+}
+.remove-party-btn {
+    background: rgba(255,100,100,0.2);
+    border: 1px solid #ff6464;
+    color: #ff6464;
+    padding: 0 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* ===== 编辑表单优化样式 ===== */
+.case-edit-container {
+    padding: 5px 5px 0 5px;
+}
+
+.edit-section {
+    border: 1px solid rgba(80, 160, 255, 0.15);
+    border-radius: 12px;
+    padding: 20px 18px;
+    margin-bottom: 20px;
+    background: rgba(10, 30, 60, 0.3);
+    backdrop-filter: blur(2px);
+    transition: border-color 0.2s;
+}
+
+.edit-section:hover {
+    border-color: rgba(90, 180, 255, 0.4);
+}
+
+.edit-section legend {
+    color: #5ab4ff;
+    padding: 0 14px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(10,30,60,0.8), transparent);
+    border-radius: 20px;
+}
+
+.edit-field {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-field label {
+    color: #8ab3d7;
+    font-size: 12px;
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.edit-field input,
+.edit-field select,
+.edit-field textarea {
+    background: rgba(5, 15, 35, 0.8);
+    border: 1px solid rgba(80, 160, 255, 0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #e0edff;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-field textarea:focus {
+    border-color: #5ab4ff;
+    box-shadow: 0 0 8px rgba(90, 180, 255, 0.2);
+    background: rgba(10, 25, 50, 0.9);
+}
+
+.edit-field input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #5ab4ff;
+    margin-right: 6px;
+    cursor: pointer;
+}
+
+.edit-field label:has(input[type="checkbox"]) {
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* 紧凑双列布局（用于基础信息的部分字段） */
+.edit-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+/* 按钮组 */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 10px 0 5px;
+}
+
+.btn-small {
+    background: rgba(20, 60, 100, 0.7);
+    border: 1px solid rgba(90, 180, 255, 0.4);
+    color: #a0c8f8;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 10px;
+}
+
+.btn-small:hover {
+    background: #5ab4ff;
+    color: #060e1f;
+    border-color: #5ab4ff;
+}
+
+/* 当事人条目 */
+.party-edit-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: rgba(0, 20, 40, 0.4);
+    border-radius: 10px;
+    border-left: 3px solid #5ab4ff;
+    transition: all 0.2s;
+}
+
+.party-edit-item:hover {
+    background: rgba(20, 50, 80, 0.5);
+    border-left-color: #00f2fe;
+}
+
+.party-edit-item input[type="text"] {
+    flex: 1 1 140px;
+    min-width: 120px;
+    padding: 8px 10px;
+}
+
+.party-edit-item label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #8ab3d7;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.remove-party-btn {
+    background: rgba(200, 70, 70, 0.15);
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: #ff8a8a;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.remove-party-btn:hover {
+    background: #ff5e5e;
+    color: #fff;
+    border-color: #ff5e5e;
+}
+
+/* 复选框行 */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 5px;
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+    .edit-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+.btn-success {
+    background: #2ecc71;
+    border: none;
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s;
+    margin-right: 8px;
+}
+.btn-success:hover {
+    background: #27ae60;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+}

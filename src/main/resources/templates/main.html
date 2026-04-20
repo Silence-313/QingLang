@@ -68,6 +68,7 @@
                 </div>
             </div>
             <div id="map-container">
+                <button id="openFullscreenModalBtn" class="map-corner-btn" title="打开全屏分析面板">📊 数据对比分析</button>
                 <div id="map"></div>
                 <div class="info-panel">
                     <!-- 地区名称 -->
@@ -87,7 +88,7 @@
 
                     <!-- 案由占比（前四） -->
                     <div class="panel-section">
-                        <div class="panel-label">📌 主要案由</div>
+                        <div class="panel-label">📌 监督场景</div>
                         <div id="pReasonStats" class="panel-stats-list"></div>
                     </div>
                 </div>
@@ -130,6 +131,111 @@
     </div>
 </div>
 <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<!-- 全屏弹窗 -->
+<div id="fullscreenModal" class="fullscreen-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">全屏数据分析面板</span>
+            <button id="closeFullscreenModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="comparisonModalBody">
+            <!-- 地区选择行 -->
+            <div class="comparison-select-row">
+                <div class="select-group">
+                    <label>地区 A</label>
+                    <select id="provinceASelect" class="province-select">
+                        <option value="">-- 请选择 --</option>
+                    </select>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="select-group">
+                    <label>地区 B</label>
+                    <select id="provinceBSelect" class="province-select">
+                        <option value="">-- 请选择 --</option>
+                    </select>
+                </div>
+                <button id="compareBtn" class="compare-btn">开始对比</button>
+            </div>
+
+            <!-- 筛选栏（初始隐藏，选择地区后显示） -->
+            <div id="filterBar" class="filter-bar" style="display: none;">
+                <div class="filter-group">
+                    <label>📅 年份</label>
+                    <select id="yearFilter" class="filter-select">
+                        <option value="">全部年份</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>📂 案件类型</label>
+                    <select id="typeFilter" class="filter-select">
+                        <option value="">全部类型</option>
+                        <option value="刑事">刑事</option>
+                        <option value="民事">民事</option>
+                        <option value="行政">行政</option>
+                        <option value="公益诉讼">公益诉讼</option>
+                    </select>
+                </div>
+                <button id="applyFilterBtn" class="apply-filter-btn">筛选</button>
+                <button id="resetFilterBtn" class="reset-filter-btn">重置</button>
+            </div>
+
+            <!-- 案件详情列表容器（初始隐藏） -->
+            <div id="caseListContainer" class="case-list-container" style="display: none;">
+                <div class="list-header">
+                    <span class="back-to-chart-btn" id="backToChartBtn">← 返回图表对比</span>
+                    <span class="list-title">案件详情列表</span>
+                </div>
+                <div id="caseListContent" class="case-list-content"></div>
+            </div>
+
+            <!-- 对比内容区域（初始隐藏） -->
+            <div id="comparisonResult" style="display: none;">
+                <!-- 核心指标卡片 -->
+                <div class="kpi-cards-row">
+                    <div class="kpi-card" id="kpiA">
+                        <div class="kpi-title" id="provinceAName">地区A</div>
+                        <div class="kpi-grid">
+                            <div class="kpi-item"><span>案件总数</span><strong id="aTotalCases">0</strong></div>
+                            <div class="kpi-item"><span>卷宗页数</span><strong id="aTotalPages">0</strong></div>
+                            <div class="kpi-item"><span>监督线索</span><strong id="aSupervision">0</strong></div>
+                            <div class="kpi-item"><span>风险评分</span><strong id="aRiskScore">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="kpi-card" id="kpiB">
+                        <div class="kpi-title" id="provinceBName">地区B</div>
+                        <div class="kpi-grid">
+                            <div class="kpi-item"><span>案件总数</span><strong id="bTotalCases">0</strong></div>
+                            <div class="kpi-item"><span>卷宗页数</span><strong id="bTotalPages">0</strong></div>
+                            <div class="kpi-item"><span>监督线索</span><strong id="bSupervision">0</strong></div>
+                            <div class="kpi-item"><span>风险评分</span><strong id="bRiskScore">0</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域（两列布局） -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">📊 案件类型分布</div>
+                        <div id="typeChart" class="chart-container"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">📌 监督场景 Top 5</div>
+                        <div id="reasonChart" class="chart-container"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">🌍 当事人国籍 Top 5</div>
+                        <div id="nationalityChart" class="chart-container"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">⚖️ 案件年份</div>
+                        <div id="lawChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script th:src="@{/js/main.js}"></script>
 </body>

@@ -1,8 +1,12 @@
 package org.example.qinglang.controller;
 
+import org.example.qinglang.entity.CaseDetailEntity;
 import org.example.qinglang.entity.CaseEntity;
+import org.example.qinglang.repository.CaseDetailRepository;
+import org.example.qinglang.repository.PartyRepository;
 import org.example.qinglang.service.CaseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +17,9 @@ public class CaseDetailController {
 
     @Autowired
     private CaseService caseService;
+
+    @Autowired
+    private CaseDetailRepository caseDetailRepository;
 
     /**
      * 页面跳转：访问 /case/detail?id=1
@@ -36,4 +43,12 @@ public class CaseDetailController {
         // 这里需要你在 CaseService 中实现 findById 方法
         return caseService.getCaseById(id);
     }
+
+    @GetMapping("/api/case-detail/{caseId}")
+    public ResponseEntity<CaseDetailEntity> getDetailByCaseId(@PathVariable Integer caseId) {
+        return caseDetailRepository.findByCaseId(caseId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }

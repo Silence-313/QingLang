@@ -1,5 +1,6 @@
 package org.example.qinglang.service;
 
+import org.example.qinglang.dto.CaseSaveRequest;
 import org.example.qinglang.dto.CaseWithReasonDto;
 import org.example.qinglang.entity.*;
 import org.example.qinglang.repository.CaseDetailRepository;
@@ -8,6 +9,7 @@ import org.example.qinglang.repository.LegalSupervisionRepository;
 import org.example.qinglang.repository.PartyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -237,6 +239,84 @@ public class CaseService {
             String judgment = detail != null ? detail.getJudgmentResults() : "";   // 新增获取判决结果
             return CaseWithReasonDto.fromEntity(c, reason, judgment);
         }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public CaseEntity saveFullCase(CaseSaveRequest request) {
+        // 1. 保存或更新案件基础信息
+        CaseEntity caseEntity = request.getCaseInfo();
+        if (caseEntity.getCaseId() != null) {
+            CaseEntity existing = caseRepository.findById(caseEntity.getCaseId())
+                    .orElseThrow(() -> new RuntimeException("案件不存在"));
+            // 更新字段
+            existing.setCaseNumber(caseEntity.getCaseNumber());
+            existing.setCaseName(caseEntity.getCaseName());
+            existing.setCourtName(caseEntity.getCourtName());
+            existing.setCaseType(caseEntity.getCaseType());
+            existing.setAcceptanceDate(caseEntity.getAcceptanceDate());
+            existing.setClosingDate(caseEntity.getClosingDate());
+            existing.setTotalPages(caseEntity.getTotalPages());
+            existing.setDocumentTypes(caseEntity.getDocumentTypes());
+            caseEntity = caseRepository.save(existing);
+        } else {
+            caseEntity = caseRepository.save(caseEntity);
+        }
+
+        final Integer caseId = caseEntity.getCaseId();
+
+        // 2. 处理当事人：先删除旧的，再保存新的
+        partyRepository.deleteByCaseEntityCaseId(caseId);
+        if (request.getParties() != null) {
+            for (PartyEntity party : request.getParties()) {
+                party.setPartyId(null); // 确保新增
+                party.setCaseEntity(caseEntity);
+                partyRepository.save(party);
+            }
+        }
+
+        // 3. 保存或更新案件详情
+        if (request.getCaseDetail() != null) {
+            CaseDetailEntity detail = request.getCaseDetail();
+            detail.setCaseId(caseId);
+            caseDetailRepository.findByCaseId(caseId).ifPresentOrElse(
+                    existing -> {
+                        existing.setCaseReason(detail.getCaseReason());
+                        existing.setJudgmentResults(detail.getJudgmentResults());
+                        existing.setJudgmentType(detail.getJudgmentType());
+                        existing.setIsEnforced(detail.getIsEnforced());
+                        existing.setAppealStatus(detail.getAppealStatus());
+                        existing.setHasOverseasEvidence(detail.getHasOverseasEvidence());
+                        existing.setOverseasEvidenceType(detail.getOverseasEvidenceType());
+                        existing.setInfringementLocation(detail.getInfringementLocation());
+                        existing.setDamageLocation(detail.getDamageLocation());
+                        existing.setApplicableLaw(detail.getApplicableLaw());
+                        existing.setTreatyPriority(detail.getTreatyPriority());
+                        existing.setForeignRelatedPages(detail.getForeignRelatedPages());
+                        existing.setArchiveLanguage(detail.getArchiveLanguage());
+                        caseDetailRepository.save(existing);
+                    },
+                    () -> caseDetailRepository.save(detail)
+            );
+        }
+
+        // 4. 保存或更新法律监督
+        if (request.getLegalSupervision() != null) {
+            LegalSupervisionEntity supervision = request.getLegalSupervision();
+            supervision.setCaseId(caseId);
+            supervisionRepository.findByCaseId(caseId).ifPresentOrElse(
+                    existing -> {
+                        existing.setHasSupervisionPoint(supervision.getHasSupervisionPoint());
+                        existing.setSupervisionField(supervision.getSupervisionField());
+                        existing.setSupervisionType(supervision.getSupervisionType());
+                        existing.setClueDescription(supervision.getClueDescription());
+                        existing.setSeverityLevel(supervision.getSeverityLevel());
+                        supervisionRepository.save(existing);
+                    },
+                    () -> supervisionRepository.save(supervision)
+            );
+        }
+
+        return caseEntity;
     }
 
 }

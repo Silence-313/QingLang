@@ -107,6 +107,21 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.23</version>
         </dependency>
+
+        <!-- PDFBox 解析 PDF -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <!-- POI 解析 Word (doc/docx) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -161,5 +176,5 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
+

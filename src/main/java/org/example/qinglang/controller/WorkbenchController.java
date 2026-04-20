@@ -2,6 +2,7 @@ package org.example.qinglang.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
+import org.example.qinglang.dto.CaseSaveRequest;
 import org.example.qinglang.entity.CaseEntity;
 import org.example.qinglang.entity.PendingTaskEntity;
 import org.example.qinglang.repository.PendingTaskRepository;
@@ -126,8 +127,8 @@ public class WorkbenchController {
     }
 
     @PostMapping("/case/save")
-    public ResponseEntity<?> saveCase(@RequestBody CaseEntity caseEntity) {
-        CaseEntity saved = caseService.saveCase(caseEntity);
+    public ResponseEntity<?> saveCase(@RequestBody CaseSaveRequest request) {
+        CaseEntity saved = caseService.saveFullCase(request);
         return ResponseEntity.ok(Map.of("success", true, "caseId", saved.getCaseId()));
     }
 

@@ -156,4 +156,10 @@ public interface CaseRepository extends JpaRepository<CaseEntity, Integer> {
     @Query("SELECT c FROM CaseEntity c LEFT JOIN FETCH c.parties WHERE c.caseType = :type")
     List<CaseEntity> findByCaseTypeWithDetails(@Param("type") String type);
 
+    // CaseRepository.java
+    @Query("SELECT FUNCTION('YEAR', c.acceptanceDate), COUNT(c) FROM CaseEntity c " +
+            "WHERE c.caseId IN :caseIds AND c.acceptanceDate IS NOT NULL " +
+            "GROUP BY FUNCTION('YEAR', c.acceptanceDate) ORDER BY FUNCTION('YEAR', c.acceptanceDate)")
+    List<Object[]> countCasesByYearAndCaseIds(@Param("caseIds") List<Integer> caseIds);
+
 }

@@ -155,7 +155,7 @@ public class SparkLiteService {
         ObjectNode parameter = objectMapper.createObjectNode();
         ObjectNode chat = objectMapper.createObjectNode();
         chat.put("domain", DOMAIN);
-        chat.put("temperature", 0.5);
+        chat.put("temperature", 0.1);
         chat.put("max_tokens", 2048);
         parameter.set("chat", chat);
         root.set("parameter", parameter);

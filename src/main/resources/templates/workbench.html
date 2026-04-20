@@ -41,11 +41,13 @@
     </div>
 
     <!-- 中间：案件详情（可编辑） -->
+    <!-- 中间：案件详情（可编辑） -->
     <div class="workbench-center">
       <div class="workbench-card">
         <div class="card-header">
           <span>📝 案件详情编辑</span>
           <div class="card-actions">
+            <button id="completeTaskBtn" class="btn-success">✅ 处理完成</button>
             <button id="saveCaseBtn" class="btn-primary">保存</button>
             <button id="cancelEditBtn" class="btn-secondary">取消</button>
           </div>
@@ -89,8 +91,15 @@
       </div>
       <div class="modal-body" id="pendingDialogBody">
         <p style="color: #8ab3d7; margin-bottom: 12px;">请输入案件描述文本，AI 将自动提取结构化信息并创建案件记录。</p>
-        <textarea id="caseDescriptionInput" placeholder="例如：案件编号(2023)京01民初123号，原告张三诉被告李四合同纠纷，由北京市第一中级人民法院审理，涉及美国当事人，案由为国际货物买卖合同纠纷，适用《联合国国际货物销售合同公约》..."
+        <textarea id="caseDescriptionInput" placeholder="请输入案件描述文本，或上传文件自动填充..."
                   style="width: 100%; height: 200px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(80,160,255,0.3); border-radius: 4px; color: #fff; font-size: 14px; resize: vertical; outline: none;"></textarea>
+        <div class="file-upload-area">
+          <label for="caseFileInput" class="file-upload-label">
+            <span>📎 上传文件 (PDF/DOCX/TXT)</span>
+            <input type="file" id="caseFileInput" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" style="display:none;" />
+          </label>
+          <span id="uploadStatus" style="margin-left: 12px; color: #5ab4ff; font-size: 13px;"></span>
+        </div>
         <div id="extractStatus" style="margin-top: 12px; color: #5ab4ff; font-size: 13px;"></div>
       </div>
       <div class="modal-footer">

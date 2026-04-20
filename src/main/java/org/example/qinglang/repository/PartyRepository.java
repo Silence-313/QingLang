@@ -2,6 +2,7 @@ package org.example.qinglang.repository;
 
 import org.example.qinglang.entity.PartyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,5 +21,10 @@ public interface PartyRepository extends JpaRepository<PartyEntity, Integer> {
     // PartyRepository.java 中添加
     List<PartyEntity> findByPartyNameContaining(String keyword);
 
+    @Modifying
+    @Query("DELETE FROM PartyEntity p WHERE p.caseEntity.caseId = :caseId")
+    void deleteByCaseEntityCaseId(@Param("caseId") Integer caseId);
+
+    List<PartyEntity> findByCaseEntityCaseId(Integer caseId);
 
 }
